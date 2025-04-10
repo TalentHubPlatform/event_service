@@ -134,7 +134,7 @@ func createTrackHandler(log *slog.Logger, service TrackService, validate *valida
 
 		log := log.With(
 			slog.String("op", op),
-			slog.String("request_it", middleware.GetReqID(r.Context())),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
 		var track schemas.Track
