@@ -10,7 +10,6 @@ type Event struct {
 	RedirectLink string    `pg:"redirect_link,notnull"`
 	CreatedAt    time.Time `pg:"created_at,default:now()"`
 	UpdatedAt    time.Time `pg:"updated_at"`
-	Status       string    `pg:"status,type:varchar(255)"`
 
 	DateID int   `pg:"date_id"`
 	Date   *Date `pg:"rel:has-one"`

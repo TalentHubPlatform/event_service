@@ -92,7 +92,6 @@ func (s *EventService) CreateEvent(event schemas.Event) (_ *models.Event, err er
 		Description:  event.Description,
 		RedirectLink: event.RedirectLink,
 		DateID:       event.DateId,
-		Status:       event.Status,
 	}
 
 	return s.repo.Create(tx, model)
@@ -132,10 +131,6 @@ func (s *EventService) UpdateEvent(eventId int, newEvent schemas.EventUpdate) (_
 
 	if newEvent.DateId != 0 {
 		event.DateID = newEvent.DateId
-	}
-
-	if newEvent.Status != "" {
-		event.Status = newEvent.Status
 	}
 
 	return s.repo.UpdateEvent(tx, eventId, event)

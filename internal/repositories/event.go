@@ -45,8 +45,8 @@ func (r *EventRepository) GetEventByStatus(tx *pg.Tx, status string) ([]*models.
 
 func (r *EventRepository) UpdateEvent(tx *pg.Tx, eventId int, newEvent *models.Event) (*models.Event, error) {
 	event := new(models.Event)
-	_, err := tx.Model(event).Set("title = ?, description = ?, redirect_link = ?, date_id = ?, status = ?", newEvent.Title,
-		newEvent.Description, newEvent.RedirectLink, newEvent.DateID, newEvent.Status).Where("id = ?", eventId).Returning("*").Update()
+	_, err := tx.Model(event).Set("title = ?, description = ?, redirect_link = ?, date_id = ?", newEvent.Title,
+		newEvent.Description, newEvent.RedirectLink, newEvent.DateID).Where("id = ?", eventId).Returning("*").Update()
 	return event, err
 }
 
