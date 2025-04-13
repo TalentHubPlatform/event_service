@@ -13,6 +13,6 @@ type TeamActionStatus struct {
 
 	ResultValue    int       `pg:"result_value"`
 	ResolutionLink string    `pg:"resolution_link"`
-	CompletedAt    time.Time `pg:"competed_at"`
+	CompletedAt    time.Time `pg:"completed_at"`
 	Notes          string    `pg:"notes"`
 }

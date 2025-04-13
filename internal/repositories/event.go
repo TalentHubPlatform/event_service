@@ -27,7 +27,7 @@ func (r *EventRepository) GetAllEvents(tx *pg.Tx) ([]*models.Event, error) {
 
 func (r *EventRepository) GetEventInDateRange(tx *pg.Tx, dateStart time.Time, dateEnd time.Time) ([]*models.Event, error) {
 	events := make([]*models.Event, 0)
-	err := tx.Model(&events).Relation("Date").Where("date.start_date >= ? AND date.end_date <= ?", dateStart, dateEnd).Select()
+	err := tx.Model(&events).Relation("Date").Where("date.date_start >= ? AND date.date_end <= ?", dateStart, dateEnd).Select()
 	return events, err
 }
 
@@ -35,6 +35,18 @@ func (r *EventRepository) GetEventByID(tx *pg.Tx, eventID int) (*models.Event, e
 	event := new(models.Event)
 	err := tx.Model(event).Where("id = ?", eventID).Select()
 	return event, err
+}
+
+func (r *EventRepository) GetAllEventsToStart(tx *pg.Tx) ([]*models.Event, error) {
+	events := make([]*models.Event, 0)
+	err := tx.Model(&events).Relation("Date").Where("date.date_start <= NOW() AND status = 'planned'").Select()
+	return events, err
+}
+
+func (r *EventRepository) GetAllEventsToEnd(tx *pg.Tx) ([]*models.Event, error) {
+	events := make([]*models.Event, 0)
+	err := tx.Model(&events).Relation("Date").Where("date.date_end >= NOW() AND status = 'in_process'").Select()
+	return events, err
 }
 
 func (r *EventRepository) GetEventByStatus(tx *pg.Tx, status string) ([]*models.Event, error) {
@@ -45,8 +57,8 @@ func (r *EventRepository) GetEventByStatus(tx *pg.Tx, status string) ([]*models.
 
 func (r *EventRepository) UpdateEvent(tx *pg.Tx, eventId int, newEvent *models.Event) (*models.Event, error) {
 	event := new(models.Event)
-	_, err := tx.Model(event).Set("title = ?, description = ?, redirect_link = ?, date_id = ?", newEvent.Title,
-		newEvent.Description, newEvent.RedirectLink, newEvent.DateID).Where("id = ?", eventId).Returning("*").Update()
+	_, err := tx.Model(event).Set("title = ?, description = ?, redirect_link = ?, date_id = ?, status = ?", newEvent.Title,
+		newEvent.Description, newEvent.RedirectLink, newEvent.DateID, newEvent.Status).Where("id = ?", eventId).Returning("*").Update()
 	return event, err
 }
 

@@ -6,10 +6,13 @@ import (
 	"event_service/internal/repositories"
 	"event_service/internal/routes/rest"
 	"event_service/internal/service"
+	"event_service/pkg/utils"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
 	"net/http"
 	"os"
@@ -38,6 +41,7 @@ func main() {
 	})
 
 	InitM2M()
+	InitPrometheus()
 
 	router := chi.NewRouter()
 	router.Mount("/event", createEventHandler(db, logger))
@@ -47,6 +51,8 @@ func main() {
 	router.Mount("/track", createTrackHandler(db, logger))
 	router.Mount("/timeline", createTimelineHandler(db, logger))
 	router.Mount("/team-action-status", createTeamActionStatusHandler(db, logger))
+
+	router.Handle("/metrics", promhttp.Handler())
 
 	logger.Info("starting server", slog.String("address", cfg.Address))
 
@@ -74,6 +80,15 @@ func InitM2M() {
 	orm.RegisterTable((*models.LocationTrack)(nil))
 	orm.RegisterTable((*models.TrackJudge)(nil))
 	orm.RegisterTable((*models.TrackWinner)(nil))
+}
+
+func InitPrometheus() {
+	prometheus.MustRegister(utils.CronTaskSuccess)
+	prometheus.MustRegister(utils.CronTaskFailure)
+	prometheus.MustRegister(utils.EventStartSuccess)
+	prometheus.MustRegister(utils.EventStartFailure)
+	prometheus.MustRegister(utils.EventEndSuccess)
+	prometheus.MustRegister(utils.EventEndFailure)
 }
 
 func setupLogger(env string) *slog.Logger {
@@ -105,10 +120,11 @@ func createDateHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 }
 
 func createEventHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
-	statusEventRepository := repositories.NewStatusEventRepository(db)
 	eventRepository := repositories.NewEventRepository(db)
 
-	eventService := service.NewEventsService(eventRepository, statusEventRepository, db)
+	eventService := service.NewEventsService(eventRepository, db)
+	go utils.ScheduleEvents(logger, eventService)
+
 	return rest.NewEvent(logger, eventService)
 }
 

@@ -10,12 +10,12 @@ type Event struct {
 	RedirectLink string    `pg:"redirect_link,notnull"`
 	CreatedAt    time.Time `pg:"created_at,default:now()"`
 	UpdatedAt    time.Time `pg:"updated_at"`
+	Status       string    `pg:"status"`
 
 	DateID int   `pg:"date_id"`
 	Date   *Date `pg:"rel:has-one"`
 
 	Locations   []Location   `pg:"many2many:event_location"`
-	Statuses    []Status     `pg:"many2many:status_event"`
 	Tracks      []Track      `pg:"rel:has-many"`
 	EventPrizes []EventPrize `pg:"rel:has-many"`
 }
