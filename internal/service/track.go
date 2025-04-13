@@ -10,10 +10,13 @@ import (
 )
 
 type TrackService struct {
-	repo              *repositories.TrackRepository
+	repo *repositories.TrackRepository
+
 	statusTrackRepo   *repositories.StatusTrackRepository
 	locationTrackRepo *repositories.LocationTrackRepository
-	db                *pg.DB
+	trackTeamRepo     *repositories.TrackTeamRepository
+
+	db *pg.DB
 }
 
 func NewTrackService(repo *repositories.TrackRepository, db *pg.DB) *TrackService {
@@ -267,4 +270,114 @@ func (s *TrackService) RemoveStatusFromTrack(statusTrackSchema *schemas.StatusTr
 	}()
 
 	return s.statusTrackRepo.DeleteStatusTrack(tx, statusTrackSchema.StatusID, statusTrackSchema.StatusID)
+}
+
+func (s *TrackService) GetRegisteredTeams(trackId int) (_ []*models.TrackTeam, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	return s.trackTeamRepo.GetTeamsByTrackID(tx, trackId)
+}
+
+func (s *TrackService) RegisterTeam(trackTeam *schemas.TrackTeam) (_ *models.TrackTeam, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	model := &models.TrackTeam{
+		TrackID:  trackTeam.TrackID,
+		TeamID:   trackTeam.TeamID,
+		IsActive: trackTeam.IsActive,
+	}
+
+	return s.trackTeamRepo.Create(tx, model)
+}
+
+func (s *TrackService) GetCertainRegisteredTeam(trackId int, teamId int) (_ *models.TrackTeam, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	return s.trackTeamRepo.GetRoleByTrackIDAndTeamID(tx, trackId, teamId)
+}
+
+func (s *TrackService) UpdateRegisteredTeam(trackId int, teamId int, newTrackTeam schemas.TrackTeamUpdate) (_ *models.TrackTeam, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	trackTeam, err := s.GetCertainRegisteredTeam(trackId, teamId)
+	if err != nil {
+		return nil, err
+	}
+
+	if newTrackTeam.IsActive != "" {
+		converted, err := strconv.ParseBool(newTrackTeam.IsActive)
+		if err != nil {
+			return nil, err
+		}
+
+		trackTeam.IsActive = converted
+	}
+
+	return s.trackTeamRepo.UpdateTrackTeam(tx, trackId, teamId, trackTeam)
+}
+
+func (s *TrackService) DeleteRegisteredTeam(trackId int, teamId int) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	return s.trackTeamRepo.DeleteTrackTeam(tx, trackId, teamId)
 }

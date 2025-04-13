@@ -3,26 +3,19 @@ package repositories
 import (
 	"event_service/internal/models"
 	"github.com/go-pg/pg/v10"
-	"time"
 )
 
 type TeamActionStatusRepository struct {
 	DB *pg.DB
 }
 
-func NewAcceptedTeamActionStatusRepository(db *pg.DB) *TeamActionStatusRepository {
+func NewTeamActionStatusRepository(db *pg.DB) *TeamActionStatusRepository {
 	return &TeamActionStatusRepository{DB: db}
 }
 
-func (r *TeamActionStatusRepository) Create(tx *pg.Tx, teamActionStatus *models.TeamActionStatus) error {
+func (r *TeamActionStatusRepository) Create(tx *pg.Tx, teamActionStatus *models.TeamActionStatus) (*models.TeamActionStatus, error) {
 	_, err := tx.Model(teamActionStatus).Insert()
-	return err
-}
-
-func (r *TeamActionStatusRepository) GetAllTeamActionStatuses(tx *pg.Tx) ([]*models.TeamActionStatus, error) {
-	teamActionStatuses := make([]*models.TeamActionStatus, 0)
-	err := tx.Model(&teamActionStatuses).Select()
-	return teamActionStatuses, err
+	return teamActionStatus, err
 }
 
 func (r *TeamActionStatusRepository) GetTeamActionStatusByTeamID(tx *pg.Tx, teamID int) ([]*models.TeamActionStatus, error) {
@@ -43,27 +36,10 @@ func (r *TeamActionStatusRepository) GetTeamActionStatusByTeamIDAndTimelineID(tx
 	return teamActionStatus, err
 }
 
-func (r *TeamActionStatusRepository) UpdateTeamActionStatusResultValue(tx *pg.Tx, teamID int, timelineID int, resultValue int) (*models.TeamActionStatus, error) {
+func (r *TeamActionStatusRepository) UpdateTeamActionStatus(tx *pg.Tx, teamID int, timelineID int, newTeamActionStatus *models.TeamActionStatus) (*models.TeamActionStatus, error) {
 	teamActionStatus := new(models.TeamActionStatus)
-	_, err := tx.Model(teamActionStatus).Set("result_value = ?", resultValue).Where("track_team_id = ?", teamID).Where("timeline_id = ?", timelineID).Update()
-	return teamActionStatus, err
-}
-
-func (r *TeamActionStatusRepository) UpdateTeamActionStatusResolutionLink(tx *pg.Tx, teamID int, timelineID int, resolutionLink string) (*models.TeamActionStatus, error) {
-	teamActionStatus := new(models.TeamActionStatus)
-	_, err := tx.Model(teamActionStatus).Set("resolution_link = ?", resolutionLink).Where("track_team_id = ?", teamID).Where("timeline_id = ?", timelineID).Update()
-	return teamActionStatus, err
-}
-
-func (r *TeamActionStatusRepository) UpdateTeamActionStatusCompletedAt(tx *pg.Tx, teamID int, timelineID int, completedAt time.Time) (*models.TeamActionStatus, error) {
-	teamActionStatus := new(models.TeamActionStatus)
-	_, err := tx.Model(teamActionStatus).Set("completed_at = ?", completedAt).Where("track_team_id = ?", teamID).Where("timeline_id = ?", timelineID).Update()
-	return teamActionStatus, err
-}
-
-func (r *TeamActionStatusRepository) UpdateTeamActionStatusNotes(tx *pg.Tx, teamID int, timelineID int, notes string) (*models.TeamActionStatus, error) {
-	teamActionStatus := new(models.TeamActionStatus)
-	_, err := tx.Model(teamActionStatus).Set("notes = ?", notes).Where("track_team_id = ?", teamID).Where("timeline_id = ?", timelineID).Update()
+	_, err := tx.Model(teamActionStatus).Set("result_value = ?, resolution_link = ?, completed_at = ?, notes = ?", newTeamActionStatus.ResultValue,
+		newTeamActionStatus.ResolutionLink, newTeamActionStatus.CompletedAt, newTeamActionStatus.Notes).Where("timeline_id = ? AND track_team_id = ?", timelineID, teamID).Returning("*").Update()
 	return teamActionStatus, err
 }
 

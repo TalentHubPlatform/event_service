@@ -46,6 +46,7 @@ func main() {
 	router.Mount("/location", createLocationHandler(db, logger))
 	router.Mount("/track", createTrackHandler(db, logger))
 	router.Mount("/timeline", createTimelineHandler(db, logger))
+	router.Mount("/team-action-status", createTeamActionStatusHandler(db, logger))
 
 	logger.Info("starting server", slog.String("address", cfg.Address))
 
@@ -138,4 +139,11 @@ func createTimelineHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 
 	timelineService := service.NewTimelineService(timelineRepository, timelineStatusRepository, db)
 	return rest.NewTimeline(logger, timelineService)
+}
+
+func createTeamActionStatusHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
+	teamActionStatusRepository := repositories.NewTeamActionStatusRepository(db)
+	teamActionStatusService := service.NewTeamActionStatusService(teamActionStatusRepository, db)
+
+	return rest.NewTeamActionStatus(logger, teamActionStatusService)
 }

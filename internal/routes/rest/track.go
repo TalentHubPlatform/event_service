@@ -17,16 +17,24 @@ import (
 
 type TrackService interface {
 	GetAllTracks() ([]*models.Track, error)
-	GetTrackById(trackId int) (*models.Track, error)
-	CreateTrack(track schemas.Track) (*models.Track, error)
-	UpdateTrack(trackId int, newTrack schemas.TrackUpdate) (*models.Track, error)
-	DeleteTrack(trackId int) error
-	GetAllTrackLocations(trackId int) ([]*models.Location, error)
-	AddLocationToTrack(locationTrackSchema *schemas.LocationTrack) (*models.LocationTrack, error)
-	RemoveLocationFromTrack(locationTrackSchema *schemas.LocationTrack) error
-	GetAllTrackStatuses(trackId int) ([]*models.Status, error)
-	AddStatusToTrack(statusTrackSchema *schemas.StatusTrack) (*models.StatusTrack, error)
-	RemoveStatusFromTrack(statusTrackSchema *schemas.StatusTrack) error
+	GetTrackById(int) (*models.Track, error)
+	CreateTrack(schemas.Track) (*models.Track, error)
+	UpdateTrack(int, schemas.TrackUpdate) (*models.Track, error)
+	DeleteTrack(int) error
+
+	GetAllTrackLocations(int) ([]*models.Location, error)
+	AddLocationToTrack(*schemas.LocationTrack) (*models.LocationTrack, error)
+	RemoveLocationFromTrack(*schemas.LocationTrack) error
+
+	GetAllTrackStatuses(int) ([]*models.Status, error)
+	AddStatusToTrack(*schemas.StatusTrack) (*models.StatusTrack, error)
+	RemoveStatusFromTrack(*schemas.StatusTrack) error
+
+	GetRegisteredTeams(int) ([]*models.TrackTeam, error)
+	GetCertainRegisteredTeam(int, int) (*models.TrackTeam, error)
+	RegisterTeam(*schemas.TrackTeam) (*models.TrackTeam, error)
+	UpdateRegisteredTeam(int, int, schemas.TrackTeamUpdate) (*models.TrackTeam, error)
+	DeleteRegisteredTeam(int, int) error
 }
 
 func NewTrack(log *slog.Logger, service *service.TrackService) *chi.Mux {
@@ -61,10 +69,20 @@ func NewTrack(log *slog.Logger, service *service.TrackService) *chi.Mux {
 			})
 		})
 
+		r.Route("/team", func(r chi.Router) {
+			r.Get("/", getRegisteredTeamsHandler(log, service))
+			r.Post("/", registerTeamHandler(log, service, validate))
+		})
+
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", getTracksByIDHandler(log, service))
 			r.Put("/", updateTrackHandler(log, service, validate))
 			r.Delete("/", deleteTrackHandler(log, service))
+
+			r.Route("/team/{teamId}", func(r chi.Router) {
+				r.Put("/", updateRegisteredTeamHandler(log, service, validate))
+				r.Delete("/", deleteRegisteredTeamHandler(log, service))
+			})
 		})
 	})
 
@@ -461,5 +479,147 @@ func removeLocationFromTrackHandler(log *slog.Logger, service TrackService) http
 
 		w.WriteHeader(http.StatusOK)
 		log.Info("Location deleted from track successfully")
+	}
+}
+
+func getRegisteredTeamsHandler(log *slog.Logger, service TrackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "rest.Track.getRegisteredTeams"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		headersList := map[string]string{
+			"TrackId": "int",
+		}
+
+		convertedHeaders, err := utils.ValidateHeaders(headersList, log, r)
+		if err != nil {
+			log.Error("Failed to validate headers: ", err.Error())
+
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+
+		trackId := convertedHeaders["TrackId"].(int)
+
+		registeredTeams, err := service.GetRegisteredTeams(trackId)
+		if err != nil {
+			log.Error("Failed to fetch registered teams:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(registeredTeams); err != nil {
+			log.Error("Failed to encode response:", err.Error())
+
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
+
+		log.Info("RegisteredTeams successfully fetched")
+	}
+}
+
+func registerTeamHandler(log *slog.Logger, service TrackService, validate *validator.Validate) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "rest.Track.registerTeam"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		var trackTeam schemas.TrackTeam
+		if err := decodeAndValidate(r, &trackTeam, validate); err != nil {
+			log.Error("Failed to decode request:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		resp, err := service.RegisterTeam(&trackTeam)
+		if err != nil {
+			log.Error("Failed to create TrackTeam:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Failed to encode response:", err.Error())
+
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
+
+		log.Info("TrackTeam created successfully")
+	}
+}
+
+func updateRegisteredTeamHandler(log *slog.Logger, service TrackService, validate *validator.Validate) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "rest.Track.updateRegisteredTeam"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		trackId, err := strconv.Atoi(chi.URLParam(r, "id"))
+		teamId, err := strconv.Atoi(chi.URLParam(r, "teamId"))
+
+		var trackTeam schemas.TrackTeamUpdate
+		if err := decodeAndValidate(r, &trackTeam, validate); err != nil {
+			log.Error("Failed to decode request:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		resp, err := service.UpdateRegisteredTeam(trackId, teamId, trackTeam)
+		if err != nil {
+			log.Error("Failed to update registered team:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Failed to encode response:", err.Error())
+
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
+
+		log.Info("Registered team updated successfully")
+	}
+}
+
+func deleteRegisteredTeamHandler(log *slog.Logger, service TrackService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "rest.Track.deleteRegisteredTeam"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		trackId, err := strconv.Atoi(chi.URLParam(r, "id"))
+		teamId, err := strconv.Atoi(chi.URLParam(r, "teamId"))
+
+		err = service.DeleteRegisteredTeam(trackId, teamId)
+
+		if err != nil {
+			log.Error("Failed to delete registered team:", err.Error())
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		log.Info("Registered team deleted successfully")
 	}
 }

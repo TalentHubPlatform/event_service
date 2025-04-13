@@ -5,6 +5,7 @@ import (
 	"event_service/internal/models"
 	"event_service/internal/schemas"
 	"event_service/internal/service"
+	internal_middleware "event_service/pkg/http/middleware"
 	"event_service/pkg/http/utils"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -39,6 +40,7 @@ func NewEvent(log *slog.Logger, service *service.EventService) *chi.Mux {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(middleware.Logger)
+	r.Use(internal_middleware.JWTAuthMiddleware("http://user_and_teams_service:8000/api/v0/auth/auth-check"))
 
 	validate := validator.New()
 
