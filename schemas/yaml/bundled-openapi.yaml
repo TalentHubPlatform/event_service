@@ -1,0 +1,502 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /dates:
+    get:
+      tags:
+        - Date
+      summary: Получить все даты
+      responses:
+        '200':
+          description: Список всех дат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DateResponse'
+    post:
+      tags:
+        - Date
+      summary: Создать дату
+      requestBody:
+        $ref: '#/components/requestBodies/Date'
+      responses:
+        '200':
+          description: Созданная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+  /dates/{Id}:
+    get:
+      tags:
+        - Date
+      summary: Получить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+    put:
+      tags:
+        - Date
+      summary: Изменить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/DateUpdate'
+      responses:
+        '200':
+          description: Измененная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+    delete:
+      tags:
+        - Date
+      summary: Удалить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная дата
+  /location:
+    get:
+      tags:
+        - Location
+      summary: Получить все локации
+      responses:
+        '200':
+          description: Список всех локаций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+    post:
+      tags:
+        - Location
+      summary: Создать локацию
+      requestBody:
+        $ref: '#/components/requestBodies/Location'
+      responses:
+        '200':
+          description: Создание локации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+  /location/{Id}:
+    get:
+      tags:
+        - Location
+      summary: Получить локацию по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная локация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+    put:
+      tags:
+        - Location
+      summary: Изменить локацию по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/LocationUpdate'
+      responses:
+        '200':
+          description: Измененная локация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+    delete:
+      tags:
+        - Location
+      summary: Удалить локацию по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная локация
+  /status:
+    get:
+      tags:
+        - Status
+      summary: Получить все статусы
+      responses:
+        '200':
+          description: Список всех статусов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusResponse'
+    post:
+      tags:
+        - Status
+      summary: Создать статус
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Создание статуса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+  /status/{Id}:
+    get:
+      tags:
+        - Status
+      summary: Получить статус по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученный статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+    put:
+      tags:
+        - Status
+      summary: Изменить статус по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/StatusUpdate'
+      responses:
+        '200':
+          description: Измененный статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+    delete:
+      tags:
+        - Status
+      summary: Удалить статус по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная локация
+  /team-action-status:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить все результаты команд по ID команды или ID таймлайна
+      parameters:
+        - $ref: '#/components/parameters/XTeamId'
+        - $ref: '#/components/parameters/XTimelineId'
+      responses:
+        '200':
+          description: Список результатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamActionStatusResponse'
+    post:
+      tags:
+        - TeamActionStatus
+      summary: Создать результат команды
+      requestBody:
+        $ref: '#/components/requestBodies/TeamActionStatus'
+      responses:
+        '200':
+          description: Созданный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+  /team-action-status/{TimelineId}/{TeamId}:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Конкретный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+    put:
+      tags:
+        - TeamActionStatus
+      summary: Изменить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      requestBody:
+        $ref: '#/components/requestBodies/TeamActionStatusUpdate'
+      responses:
+        '200':
+          description: Измененный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+    delete:
+      tags:
+        - TeamActionStatus
+      summary: Удаление конкретного результата в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Удаленный результат
+components:
+  schemas:
+    Date:
+      required:
+        - date_start
+        - date_end
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+        date_end:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+    DateResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Date'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    DateUpdate:
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+        date_end:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+    Location:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: Location Title
+    LocationResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Location'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    LocationUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Location title
+    Status:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: Status Title
+    StatusResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Status'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    StatusUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Status title
+    TeamActionStatus:
+      required:
+        - result_value
+        - resolution_link
+        - completed_at
+        - notes
+      type: object
+      properties:
+        result_value:
+          type: integer
+          example: 600
+        resolution_link:
+          type: string
+          example: https://www.youtube.com
+        completed_at:
+          type: string
+          format: date-time
+          example: '2023-01-02T00:00:00Z'
+        notes:
+          type: string
+          example: Notes
+    TeamActionStatusResponse:
+      required:
+        - track_team_id
+        - timeline_id
+      allOf:
+        - $ref: '#/components/schemas/TeamActionStatus'
+        - type: object
+          properties:
+            track_team_id:
+              type: integer
+              example: 1
+            timeline_id:
+              type: integer
+              example: 1
+    TeamActionStatusUpdate:
+      type: object
+      properties:
+        result_value:
+          type: integer
+          example: 600
+        resolution_link:
+          type: string
+          example: https://www.youtube.com
+        completed_at:
+          type: string
+          format: date-time
+          example: '2023-01-02T00:00:00Z'
+        notes:
+          type: string
+          example: Notes
+  requestBodies:
+    Date:
+      description: Данные для создания новой даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Date'
+    DateUpdate:
+      description: Данные для обновления даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DateUpdate'
+    Location:
+      description: Данные для создания новой локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Location'
+    LocationUpdate:
+      description: Данные для обновления локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LocationUpdate'
+    Status:
+      description: Данные для создания нового статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Status'
+    StatusUpdate:
+      description: Данные для обновления статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusUpdate'
+    TeamActionStatus:
+      description: Данные для создания нового статуса действия команды
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TeamActionStatus'
+    TeamActionStatusUpdate:
+      description: Данные для обновления статуса действия команды
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TeamActionStatusUpdate'
+  parameters:
+    Id:
+      name: Id
+      in: path
+      required: true
+      description: Уникальный идентификатор
+      schema:
+        type: integer
+    XTeamId:
+      name: XTeamId
+      in: header
+      required: false
+      description: Header идентификатор команды
+      schema:
+        type: integer
+    XTimelineId:
+      name: XTimelineId
+      in: header
+      required: false
+      description: Header идентификатор таймлайна
+      schema:
+        type: integer
+    TeamId:
+      name: TeamId
+      in: path
+      required: true
+      description: Идентификатор команды
+      schema:
+        type: integer
+    TimelineId:
+      name: TimelineId
+      in: path
+      required: true
+      description: Идентификатор таймлайна
+      schema:
+        type: integer

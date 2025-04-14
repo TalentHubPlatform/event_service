@@ -1,0 +1,45 @@
+components:
+  schemas:
+    Location:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Location Title"
+
+    LocationResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Location'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+
+    LocationUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Location title"
+
+  requestBodies:
+    Location:
+      description: Данные для создания новой локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Location'
+
+    LocationUpdate:
+      description: Данные для обновления локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LocationUpdate'

@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /location:
+    get:
+      tags:
+        - Location
+      summary: Получить все локации
+      responses:
+        '200':
+          description: Список всех локаций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+    post:
+      tags:
+        - Location
+      summary: Создать локацию
+      requestBody:
+        $ref: '#/components/requestBodies/Location'
+      responses:
+        '200':
+          description: Создание локации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+  /location/{Id}:
+    get:
+      tags:
+        - Location
+      summary: Получить локацию по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная локация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+    put:
+      tags:
+        - Location
+      summary: Изменить локацию по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/LocationUpdate'
+      responses:
+        '200':
+          description: Измененная локация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+    delete:
+      tags:
+        - Location
+      summary: Удалить локацию по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная локация
+components:
+  schemas:
+    Location:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: Location Title
+    LocationResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Location'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    LocationUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Location title
+  requestBodies:
+    Location:
+      description: Данные для создания новой локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Location'
+    LocationUpdate:
+      description: Данные для обновления локации
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LocationUpdate'
+  parameters:
+    Id:
+      name: Id
+      in: path
+      required: true
+      description: Уникальный идентификатор
+      schema:
+        type: integer

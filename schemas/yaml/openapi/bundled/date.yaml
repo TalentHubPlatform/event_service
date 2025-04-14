@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /dates:
+    get:
+      tags:
+        - Date
+      summary: Получить все даты
+      responses:
+        '200':
+          description: Список всех дат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DateResponse'
+    post:
+      tags:
+        - Date
+      summary: Создать дату
+      requestBody:
+        $ref: '#/components/requestBodies/Date'
+      responses:
+        '200':
+          description: Созданная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+  /dates/{Id}:
+    get:
+      tags:
+        - Date
+      summary: Получить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+    put:
+      tags:
+        - Date
+      summary: Изменить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/DateUpdate'
+      responses:
+        '200':
+          description: Измененная дата
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+    delete:
+      tags:
+        - Date
+      summary: Удалить дату по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная дата
+components:
+  schemas:
+    Date:
+      required:
+        - date_start
+        - date_end
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+        date_end:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+    DateResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Date'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    DateUpdate:
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+        date_end:
+          type: string
+          format: date-time
+          example: '2018-03-20T09:12:28Z'
+  requestBodies:
+    Date:
+      description: Данные для создания новой даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Date'
+    DateUpdate:
+      description: Данные для обновления даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DateUpdate'
+  parameters:
+    Id:
+      name: Id
+      in: path
+      required: true
+      description: Уникальный идентификатор
+      schema:
+        type: integer

@@ -1,0 +1,175 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /team-action-status:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить все результаты команд по ID команды или ID таймлайна
+      parameters:
+        - $ref: '#/components/parameters/XTeamId'
+        - $ref: '#/components/parameters/XTimelineId'
+      responses:
+        '200':
+          description: Список результатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamActionStatusResponse'
+    post:
+      tags:
+        - TeamActionStatus
+      summary: Создать результат команды
+      requestBody:
+        $ref: '#/components/requestBodies/TeamActionStatus'
+      responses:
+        '200':
+          description: Созданный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+  /team-action-status/{TimelineId}/{TeamId}:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Конкретный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+    put:
+      tags:
+        - TeamActionStatus
+      summary: Изменить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      requestBody:
+        $ref: '#/components/requestBodies/TeamActionStatusUpdate'
+      responses:
+        '200':
+          description: Измененный результат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamActionStatusResponse'
+    delete:
+      tags:
+        - TeamActionStatus
+      summary: Удаление конкретного результата в конкретный таймлайн
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Удаленный результат
+components:
+  parameters:
+    XTeamId:
+      name: XTeamId
+      in: header
+      required: false
+      description: Header идентификатор команды
+      schema:
+        type: integer
+    XTimelineId:
+      name: XTimelineId
+      in: header
+      required: false
+      description: Header идентификатор таймлайна
+      schema:
+        type: integer
+    TeamId:
+      name: TeamId
+      in: path
+      required: true
+      description: Идентификатор команды
+      schema:
+        type: integer
+    TimelineId:
+      name: TimelineId
+      in: path
+      required: true
+      description: Идентификатор таймлайна
+      schema:
+        type: integer
+  schemas:
+    TeamActionStatus:
+      required:
+        - result_value
+        - resolution_link
+        - completed_at
+        - notes
+      type: object
+      properties:
+        result_value:
+          type: integer
+          example: 600
+        resolution_link:
+          type: string
+          example: https://www.youtube.com
+        completed_at:
+          type: string
+          format: date-time
+          example: '2023-01-02T00:00:00Z'
+        notes:
+          type: string
+          example: Notes
+    TeamActionStatusResponse:
+      required:
+        - track_team_id
+        - timeline_id
+      allOf:
+        - $ref: '#/components/schemas/TeamActionStatus'
+        - type: object
+          properties:
+            track_team_id:
+              type: integer
+              example: 1
+            timeline_id:
+              type: integer
+              example: 1
+    TeamActionStatusUpdate:
+      type: object
+      properties:
+        result_value:
+          type: integer
+          example: 600
+        resolution_link:
+          type: string
+          example: https://www.youtube.com
+        completed_at:
+          type: string
+          format: date-time
+          example: '2023-01-02T00:00:00Z'
+        notes:
+          type: string
+          example: Notes
+  requestBodies:
+    TeamActionStatus:
+      description: Данные для создания нового статуса действия команды
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TeamActionStatus'
+    TeamActionStatusUpdate:
+      description: Данные для обновления статуса действия команды
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TeamActionStatusUpdate'

@@ -1,0 +1,56 @@
+components:
+  schemas:
+    Date:
+      required:
+        - date_start
+        - date_end
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: 2018-03-20T09:12:28Z
+        date_end:
+          type: string
+          format: date-time
+          example: 2018-03-20T09:12:28Z
+
+    DateResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Date'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+
+    DateUpdate:
+      type: object
+      properties:
+        date_start:
+          type: string
+          format: date-time
+          example: 2018-03-20T09:12:28Z
+        date_end:
+          type: string
+          format: date-time
+          example: 2018-03-20T09:12:28Z
+
+  requestBodies:
+    Date:
+      description: Данные для создания новой даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Date'
+
+    DateUpdate:
+      description: Данные для обновления даты
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DateUpdate'

@@ -1,0 +1,76 @@
+tags:
+  - name: TeamActionStatus
+    description: Результат команды в определенный таймлайн
+
+paths:
+  /team-action-status:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить все результаты команд по ID команды или ID таймлайна
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/XTeamId'
+        - $ref: '../definitions.yaml#/components/parameters/XTimelineId'
+      responses:
+        '200':
+          description: Список результатов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../definitions/team_action_status.yaml#/components/schemas/TeamActionStatusResponse'
+    post:
+      tags:
+        - TeamActionStatus
+      summary: Создать результат команды
+      requestBody:
+        $ref: '../definitions/team_action_status.yaml#/components/requestBodies/TeamActionStatus'
+      responses:
+        '200':
+          description: Созданный результат
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/team_action_status.yaml#/components/schemas/TeamActionStatusResponse'
+  /team-action-status/{TimelineId}/{TeamId}:
+    get:
+      tags:
+        - TeamActionStatus
+      summary: Получить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/TeamId'
+        - $ref: '../definitions.yaml#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Конкретный результат
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/team_action_status.yaml#/components/schemas/TeamActionStatusResponse'
+    put:
+      tags:
+        - TeamActionStatus
+      summary: Изменить результат конкретной команды в конкретный таймлайн
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/TeamId'
+        - $ref: '../definitions.yaml#/components/parameters/TimelineId'
+      requestBody:
+        $ref: '../definitions/team_action_status.yaml#/components/requestBodies/TeamActionStatusUpdate'
+      responses:
+        '200':
+          description: Измененный результат
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/team_action_status.yaml#/components/schemas/TeamActionStatusResponse'
+    delete:
+      tags:
+        - TeamActionStatus
+      summary: Удаление конкретного результата в конкретный таймлайн
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/TeamId'
+        - $ref: '../definitions.yaml#/components/parameters/TimelineId'
+      responses:
+        '200':
+          description: Удаленный результат

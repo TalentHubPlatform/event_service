@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /status:
+    get:
+      tags:
+        - Status
+      summary: Получить все статусы
+      responses:
+        '200':
+          description: Список всех статусов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusResponse'
+    post:
+      tags:
+        - Status
+      summary: Создать статус
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Создание статуса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+  /status/{Id}:
+    get:
+      tags:
+        - Status
+      summary: Получить статус по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученный статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+    put:
+      tags:
+        - Status
+      summary: Изменить статус по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/StatusUpdate'
+      responses:
+        '200':
+          description: Измененный статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+    delete:
+      tags:
+        - Status
+      summary: Удалить статус по id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная локация
+components:
+  schemas:
+    Status:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: Status Title
+    StatusResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Status'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    StatusUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Status title
+  requestBodies:
+    Status:
+      description: Данные для создания нового статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Status'
+    StatusUpdate:
+      description: Данные для обновления статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusUpdate'
+  parameters:
+    Id:
+      name: Id
+      in: path
+      required: true
+      description: Уникальный идентификатор
+      schema:
+        type: integer

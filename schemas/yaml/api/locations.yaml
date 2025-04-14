@@ -1,0 +1,69 @@
+tags:
+  - name: Location
+    description: Операции с локациями
+paths:
+  /location:
+    get:
+      tags:
+        - Location
+      summary: Получить все локации
+      responses:
+        '200':
+          description: Список всех локаций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../definitions/location.yaml#/components/schemas/LocationResponse'
+    post:
+      tags:
+        - Location
+      summary: Создать локацию
+      requestBody:
+        $ref: '../definitions/location.yaml#/components/requestBodies/Location'
+      responses:
+        '200':
+          description: Создание локации
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/location.yaml#/components/schemas/LocationResponse'
+  /location/{Id}:
+    get:
+      tags:
+        - Location
+      summary: Получить локацию по Id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная локация
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/location.yaml#/components/schemas/LocationResponse'
+    put:
+      tags:
+        - Location
+      summary: Изменить локацию по id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      requestBody:
+        $ref: '../definitions/location.yaml#/components/requestBodies/LocationUpdate'
+      responses:
+        '200':
+          description: Измененная локация
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/location.yaml#/components/schemas/LocationResponse'
+    delete:
+      tags:
+        - Location
+      summary: Удалить локацию по id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная локация

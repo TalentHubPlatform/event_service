@@ -1,0 +1,45 @@
+components:
+  schemas:
+    Status:
+      required:
+        - title
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Status Title"
+
+    StatusResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Status'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+
+    StatusUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Status title"
+
+  requestBodies:
+    Status:
+      description: Данные для создания нового статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Status'
+
+    StatusUpdate:
+      description: Данные для обновления статуса
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusUpdate'

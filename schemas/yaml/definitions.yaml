@@ -1,0 +1,37 @@
+components:
+  parameters:
+    Id:
+      name: Id
+      in: path
+      required: true
+      description: Уникальный идентификатор
+      schema:
+        type: integer
+    TeamId:
+      name: TeamId
+      in: path
+      required: true
+      description: Идентификатор команды
+      schema:
+        type: integer
+    TimelineId:
+      name: TimelineId
+      in: path
+      required: true
+      description: Идентификатор таймлайна
+      schema:
+        type: integer
+    XTeamId:
+      name: XTeamId
+      in: header
+      required: false
+      description: Header идентификатор команды
+      schema:
+        type: integer
+    XTimelineId:
+      name: XTimelineId
+      in: header
+      required: false
+      description: Header идентификатор таймлайна
+      schema:
+        type: integer

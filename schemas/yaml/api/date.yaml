@@ -1,0 +1,69 @@
+tags:
+  - name: Date
+    description: Операции с датами
+paths:
+  /dates:
+    get:
+      tags:
+        - Date
+      summary: Получить все даты
+      responses:
+        '200':
+          description: Список всех дат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../definitions/date.yaml#/components/schemas/DateResponse'
+    post:
+      tags:
+        - Date
+      summary: Создать дату
+      requestBody:
+        $ref: '../definitions/date.yaml#/components/requestBodies/Date'
+      responses:
+        '200':
+          description: Созданная дата
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/date.yaml#/components/schemas/DateResponse'
+  /dates/{Id}:
+    get:
+      tags:
+        - Date
+      summary: Получить дату по id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Полученная дата
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/date.yaml#/components/schemas/DateResponse'
+    put:
+      tags:
+        - Date
+      summary: Изменить дату по id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      requestBody:
+        $ref: '../definitions/date.yaml#/components/requestBodies/DateUpdate'
+      responses:
+        '200':
+          description: Измененная дата
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/date.yaml#/components/schemas/DateResponse'
+    delete:
+      tags:
+        - Date
+      summary: Удалить дату по id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленная дата

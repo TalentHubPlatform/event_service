@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  title: Event Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /dates:
+    $ref: '../api/date.yaml#/paths/~1dates'
+  /dates/{Id}:
+    $ref: '../api/date.yaml#/paths/~1dates~1{Id}'
+  
