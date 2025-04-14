@@ -1,9 +1,9 @@
 package service
 
 import (
+	api "event_service/gen/date"
 	"event_service/internal/models"
 	"event_service/internal/repositories"
-	"event_service/internal/schemas"
 	"github.com/go-pg/pg/v10"
 )
 
@@ -19,7 +19,25 @@ func NewDateService(repo *repositories.DateRepository, db *pg.DB) *DateService {
 	}
 }
 
-func (s *DateService) GetAllDates() ([]*models.Date, error) {
+func SingleDateConvert(model *models.Date) *api.DateResponse {
+	return &api.DateResponse{
+		DateStart: model.DateStart,
+		DateEnd:   model.DateEnd,
+		Id:        &model.ID,
+	}
+}
+
+func MultipleDateConvert(models []*models.Date) []*api.DateResponse {
+	responses := make([]*api.DateResponse, 0)
+
+	for _, model := range models {
+		responses = append(responses, SingleDateConvert(model))
+	}
+
+	return responses
+}
+
+func (s *DateService) GetAllDates() ([]*api.DateResponse, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -33,10 +51,15 @@ func (s *DateService) GetAllDates() ([]*models.Date, error) {
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetAllDates(tx)
+	dateModels, err := s.repo.GetAllDates(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleDateConvert(dateModels), nil
 }
 
-func (s *DateService) GetDateByID(id int) (*models.Date, error) {
+func (s *DateService) GetDateByID(id int) (*api.DateResponse, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -50,10 +73,15 @@ func (s *DateService) GetDateByID(id int) (*models.Date, error) {
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetDateById(tx, id)
+	dateModel, err := s.repo.GetDateById(tx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleDateConvert(dateModel), nil
 }
 
-func (s *DateService) CreateDate(date schemas.Date) (*models.Date, error) {
+func (s *DateService) CreateDate(date api.Date) (*api.DateResponse, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -73,10 +101,15 @@ func (s *DateService) CreateDate(date schemas.Date) (*models.Date, error) {
 		DateEnd:   date.DateEnd,
 	}
 
-	return s.repo.Create(tx, &model)
+	dateModel, err := s.repo.Create(tx, &model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleDateConvert(dateModel), nil
 }
 
-func (s *DateService) UpdateDate(id int, date schemas.Date) (*models.Date, error) {
+func (s *DateService) UpdateDate(id int, date api.DateUpdate) (*api.DateResponse, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -101,7 +134,7 @@ func (s *DateService) UpdateDate(id int, date schemas.Date) (*models.Date, error
 		return nil, err
 	}
 
-	return model, nil
+	return SingleDateConvert(model), nil
 }
 
 func (s *DateService) DeleteDate(id int) error {

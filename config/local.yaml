@@ -1,4 +1,5 @@
 env: "local"
+auth-url: "http://user_and_teams_service:8000/api/v0/auth/auth-check"
 http_server:
   address: ":8081"
   timeout: 10s

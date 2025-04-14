@@ -1,9 +1,9 @@
 package service
 
 import (
+	status_api "event_service/gen/status"
 	"event_service/internal/models"
 	"event_service/internal/repositories"
-	"event_service/internal/schemas"
 	"github.com/go-pg/pg/v10"
 )
 
@@ -19,7 +19,23 @@ func NewStatusService(repo *repositories.StatusRepository, db *pg.DB) *StatusSer
 	}
 }
 
-func (s *StatusService) GetAllStatuses() (_ []*models.Status, err error) {
+func SingleStatusConvert(model *models.Status) *status_api.StatusResponse {
+	return &status_api.StatusResponse{
+		Title: model.Title,
+	}
+}
+
+func MultipleStatusConvert(models []*models.Status) []*status_api.StatusResponse {
+	responses := make([]*status_api.StatusResponse, 0)
+
+	for _, model := range models {
+		responses = append(responses, SingleStatusConvert(model))
+	}
+
+	return responses
+}
+
+func (s *StatusService) GetAllStatuses() (_ []*status_api.StatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -34,10 +50,15 @@ func (s *StatusService) GetAllStatuses() (_ []*models.Status, err error) {
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetAllStatuses(tx)
+	statusModels, err := s.repo.GetAllStatuses(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleStatusConvert(statusModels), nil
 }
 
-func (s *StatusService) GetStatusById(statusId int) (_ *models.Status, err error) {
+func (s *StatusService) GetStatusById(statusId int) (_ *status_api.StatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -52,10 +73,15 @@ func (s *StatusService) GetStatusById(statusId int) (_ *models.Status, err error
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetStatusById(tx, statusId)
+	statusModel, err := s.repo.GetStatusById(tx, statusId)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleStatusConvert(statusModel), nil
 }
 
-func (s *StatusService) CreateStatus(status schemas.Status) (_ *models.Status, err error) {
+func (s *StatusService) CreateStatus(status status_api.Status) (_ *status_api.StatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -70,15 +96,19 @@ func (s *StatusService) CreateStatus(status schemas.Status) (_ *models.Status, e
 		err = tx.Commit()
 	}()
 
-	statusModel := &models.Status{
-		Title:       status.Title,
-		Description: status.Description,
+	model := &models.Status{
+		Title: status.Title,
 	}
 
-	return s.repo.Create(tx, statusModel)
+	statusModel, err := s.repo.Create(tx, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleStatusConvert(statusModel), nil
 }
 
-func (s *StatusService) UpdateStatus(eventId int, newStatus schemas.Status) (_ *models.Status, err error) {
+func (s *StatusService) UpdateStatus(eventId int, newStatus status_api.StatusUpdate) (_ *status_api.StatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -98,15 +128,20 @@ func (s *StatusService) UpdateStatus(eventId int, newStatus schemas.Status) (_ *
 		return status, err
 	}
 
-	if newStatus.Title != "" {
-		status.Title = newStatus.Title
+	if newStatus.Title != nil {
+		status.Title = *newStatus.Title
 	}
 
-	if newStatus.Description != "" {
-		status.Description = newStatus.Description
+	model := &models.Status{
+		Title: status.Title,
 	}
 
-	return s.repo.UpdateStatus(tx, status)
+	statusModel, err := s.repo.UpdateStatus(tx, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleStatusConvert(statusModel), nil
 }
 
 func (s *StatusService) DeleteStatus(statusId int) (err error) {

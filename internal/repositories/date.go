@@ -31,13 +31,13 @@ func (r *DateRepository) GetDateById(tx *pg.Tx, id int) (*models.Date, error) {
 	return date, err
 }
 
-func (r *DateRepository) ChangeDateStart(tx *pg.Tx, id int, dateStart time.Time) (*models.Date, error) {
+func (r *DateRepository) ChangeDateStart(tx *pg.Tx, id int, dateStart *time.Time) (*models.Date, error) {
 	date := new(models.Date)
 	_, err := tx.Model(date).Set("date_start = ?", dateStart).Where("id = ?", id).Update()
 	return date, err
 }
 
-func (r *DateRepository) ChangeDateEnd(tx *pg.Tx, id int, dateEnd time.Time) (*models.Date, error) {
+func (r *DateRepository) ChangeDateEnd(tx *pg.Tx, id int, dateEnd *time.Time) (*models.Date, error) {
 	date := new(models.Date)
 	_, err := tx.Model(date).Set("date_end = ?", dateEnd).Where("id = ?", id).Update()
 	return date, err

@@ -1,15 +1,31 @@
 package service
 
 import (
+	locationapi "event_service/gen/location"
 	"event_service/internal/models"
 	"event_service/internal/repositories"
-	"event_service/internal/schemas"
 	"github.com/go-pg/pg/v10"
 )
 
 type LocationService struct {
 	repo *repositories.LocationRepository
 	db   *pg.DB
+}
+
+func SingleLocationConvert(model *models.Location) *locationapi.LocationResponse {
+	return &locationapi.LocationResponse{
+		Title: model.Title,
+	}
+}
+
+func MultipleLocationConvert(models []*models.Location) []*locationapi.LocationResponse {
+	responses := make([]*locationapi.LocationResponse, 0)
+
+	for _, model := range models {
+		responses = append(responses, SingleLocationConvert(model))
+	}
+
+	return responses
 }
 
 func NewLocationService(repo *repositories.LocationRepository, db *pg.DB) *LocationService {
@@ -19,7 +35,7 @@ func NewLocationService(repo *repositories.LocationRepository, db *pg.DB) *Locat
 	}
 }
 
-func (s *LocationService) GetAllLocations() (_ []*models.Location, err error) {
+func (s *LocationService) GetAllLocations() (_ []*locationapi.LocationResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -34,10 +50,15 @@ func (s *LocationService) GetAllLocations() (_ []*models.Location, err error) {
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetAllLocations(tx)
+	locationModels, err := s.repo.GetAllLocations(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleLocationConvert(locationModels), nil
 }
 
-func (s *LocationService) GetLocationById(locationId int) (_ *models.Location, err error) {
+func (s *LocationService) GetLocationById(locationId int) (_ *locationapi.LocationResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -51,10 +72,15 @@ func (s *LocationService) GetLocationById(locationId int) (_ *models.Location, e
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetLocationById(tx, locationId)
+	locationModel, err := s.repo.GetLocationById(tx, locationId)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleLocationConvert(locationModel), nil
 }
 
-func (s *LocationService) CreateLocation(event schemas.Location) (_ *models.Location, err error) {
+func (s *LocationService) CreateLocation(location locationapi.Location) (_ *locationapi.LocationResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -70,13 +96,18 @@ func (s *LocationService) CreateLocation(event schemas.Location) (_ *models.Loca
 	}()
 
 	model := &models.Location{
-		Title: event.Title,
+		Title: location.Title,
 	}
 
-	return s.repo.Create(tx, model)
+	locationModel, err := s.repo.Create(tx, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleLocationConvert(locationModel), nil
 }
 
-func (s *LocationService) UpdateLocation(locationId int, newLocation schemas.LocationUpdate) (_ *models.Location, err error) {
+func (s *LocationService) UpdateLocation(locationId int, newLocation locationapi.LocationUpdate) (_ *locationapi.LocationResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -96,11 +127,20 @@ func (s *LocationService) UpdateLocation(locationId int, newLocation schemas.Loc
 		return nil, err
 	}
 
-	if newLocation.Title != "" {
-		location.Title = newLocation.Title
+	if newLocation.Title != nil {
+		location.Title = *newLocation.Title
 	}
 
-	return s.repo.Update(tx, locationId, location)
+	model := &models.Location{
+		Title: location.Title,
+	}
+
+	locationModel, err := s.repo.Update(tx, locationId, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleLocationConvert(locationModel), nil
 }
 
 func (s *LocationService) DeleteLocation(locationId int) (err error) {

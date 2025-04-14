@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Env         string `yaml:"env" env-default:"local"`
+	AuthUrl     string `yaml:"auth-url" env-default:"http://user_and_teams_service:8000/api/v0/auth/auth-check"`
 	HTTPServer  `yaml:"http_server"`
 	SQLDatabase `yaml:"sql_database"`
 }

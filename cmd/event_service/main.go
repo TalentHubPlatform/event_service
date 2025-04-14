@@ -13,6 +13,7 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
 	"os"
@@ -24,6 +25,20 @@ const (
 	envProd  = "prod"
 )
 
+// @title Swagger Example API
+// @version 1.0
+// @description This is a sample server Petstore server.
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host petstore.swagger.io
+// @BasePath /v2
 func main() {
 	cfg := config.MustLoad()
 	fmt.Println(cfg)
@@ -44,6 +59,8 @@ func main() {
 	InitPrometheus()
 
 	router := chi.NewRouter()
+	router.Get("/swagger/*", httpSwagger.WrapHandler)
+
 	router.Mount("/event", createEventHandler(db, logger))
 	router.Mount("/date", createDateHandler(db, logger))
 	router.Mount("/status", createStatusHandler(db, logger))

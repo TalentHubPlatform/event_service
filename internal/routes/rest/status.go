@@ -1,23 +1,164 @@
 package rest
 
 import (
-	"encoding/json"
-	"event_service/internal/models"
-	"event_service/internal/schemas"
+	status_api "event_service/gen/status"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
 	"log/slog"
 	"net/http"
 	"strconv"
 )
 
 type StatusService interface {
-	GetAllStatuses() ([]*models.Status, error)
-	GetStatusById(id int) (*models.Status, error)
-	CreateStatus(date schemas.Status) (*models.Status, error)
-	UpdateStatus(id int, date schemas.Status) (*models.Status, error)
+	GetAllStatuses() ([]*status_api.StatusResponse, error)
+	GetStatusById(id int) (*status_api.StatusResponse, error)
+	CreateStatus(date status_api.Status) (*status_api.StatusResponse, error)
+	UpdateStatus(id int, date status_api.StatusUpdate) (*status_api.StatusResponse, error)
 	DeleteStatus(id int) error
+}
+
+type StatusHandler struct {
+	log       *slog.Logger
+	service   StatusService
+	validator *validator.Validate
+}
+
+func NewStatusHandler(log *slog.Logger, service StatusService, validator *validator.Validate) *StatusHandler {
+	return &StatusHandler{
+		log:       log,
+		service:   service,
+		validator: validator,
+	}
+}
+
+func (h *StatusHandler) GetStatus(ctx echo.Context) error {
+	const op = "rest.Status.getAll"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("request_id", ctx.Get("request_id").(string)),
+	)
+
+	statuses, err := h.service.GetAllStatuses()
+	if err != nil {
+		log.Error("Failed to get statuses:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to get statuses",
+		})
+	}
+
+	log.Info("Statuses fetched successfully")
+
+	return ctx.JSON(http.StatusOK, statuses)
+}
+
+func (h *StatusHandler) GetStatusId(ctx echo.Context, id status_api.Id) error {
+	const op = "rest.Status.getByID"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("request_id", ctx.Get("request_id").(string)),
+	)
+
+	status, err := h.service.GetStatusById(int(id))
+	if err != nil {
+		log.Error("Failed to get status:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to get status",
+		})
+	}
+
+	log.Info("Status fetched successfully")
+
+	return ctx.JSON(http.StatusOK, status)
+}
+
+func (h *StatusHandler) PostStatus(ctx echo.Context) error {
+	const op = "rest.Status.create"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
+	)
+
+	var status status_api.Status
+	if err := decodeAndValidateEcho(ctx, &status, h.validator); err != nil {
+		log.Error("Failed to decode and validate request:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	resp, err := h.service.CreateStatus(status)
+	if err != nil {
+		log.Error("Failed to create status:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to create status",
+		})
+	}
+
+	log.Info("Status created successfully")
+
+	return ctx.JSON(http.StatusCreated, resp)
+}
+
+func (h *StatusHandler) PutStatusId(ctx echo.Context, id status_api.Id) error {
+	const op = "rest.Status.update"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("request_id", ctx.Get("request_id").(string)),
+	)
+
+	var status status_api.StatusUpdate
+	if err := decodeAndValidateEcho(ctx, &status, h.validator); err != nil {
+		log.Error("Failed to decode and validate request:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	resp, err := h.service.UpdateStatus(int(id), status)
+	if err != nil {
+		log.Error("Failed to update status:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to update status",
+		})
+	}
+
+	log.Info("Status updated successfully")
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+func (h *StatusHandler) DeleteStatusId(ctx echo.Context, id status_api.Id) error {
+	const op = "rest.Status.delete"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("request_id", ctx.Get("request_id").(string)),
+	)
+
+	err := h.service.DeleteStatus(int(id))
+	if err != nil {
+		log.Error("Failed to delete status:", slog.String("error", err.Error()))
+
+		return ctx.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to delete status",
+		})
+	}
+
+	log.Info("Status deleted successfully")
+
+	return ctx.NoContent(http.StatusOK)
 }
 
 func NewStatus(log *slog.Logger, service StatusService) *chi.Mux {
@@ -30,171 +171,29 @@ func NewStatus(log *slog.Logger, service StatusService) *chi.Mux {
 
 	validate := validator.New()
 
-	r.Route("/", func(r chi.Router) {
-		r.Get("/", getAllStatusHandler(log, service))
-		r.Post("/", createStatusHandler(log, service, validate))
+	handler := NewStatusHandler(log, service, validate)
+
+	r.Route("/status", func(r chi.Router) {
+		r.Get("/", HandlerAdapter(handler.GetStatus))
+		r.Post("/", HandlerAdapter(handler.PostStatus))
 
 		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", getStatusByIDHandler(log, service))
-			r.Put("/", updateStatusHandler(log, service, validate))
-			r.Delete("/", deleteStatusHandler(log, service))
+			r.Get("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("id"))
+				return handler.GetStatusId(ctx, status_api.Id(id))
+			}))
+
+			r.Put("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("id"))
+				return handler.PutStatusId(ctx, status_api.Id(id))
+			}))
+
+			r.Delete("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("id"))
+				return handler.DeleteStatusId(ctx, status_api.Id(id))
+			}))
 		})
 	})
 
 	return r
-}
-
-func getAllStatusHandler(log *slog.Logger, service StatusService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Status.getAll"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		statuses, err := service.GetAllStatuses()
-		if err != nil {
-			log.Error("Failed to get statuses:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(statuses); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Statuses fetched successfully")
-	}
-}
-
-func getStatusByIDHandler(log *slog.Logger, service StatusService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Status.getByID"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_it", middleware.GetReqID(r.Context())),
-		)
-
-		statusId, err := strconv.Atoi(chi.URLParam(r, "id"))
-		status, err := service.GetStatusById(statusId)
-		if err != nil {
-			log.Error("Failed to get status:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(status); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Status fetched successfully")
-	}
-}
-
-func createStatusHandler(log *slog.Logger, service StatusService, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Status.create"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_it", middleware.GetReqID(r.Context())),
-		)
-
-		var status schemas.Status
-		if err := decodeAndValidate(r, &status, validate); err != nil {
-			log.Error("Failed to decode request:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		resp, err := service.CreateStatus(status)
-		if err != nil {
-			log.Error("Failed to create date:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Status created successfully")
-	}
-}
-
-func updateStatusHandler(log *slog.Logger, service StatusService, validate *validator.Validate) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Status.update"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		var status schemas.Status
-		if err := decodeAndValidate(r, &status, validate); err != nil {
-			log.Error("Failed to decode request:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		statusId, err := strconv.Atoi(chi.URLParam(r, "id"))
-		resp, err := service.UpdateStatus(statusId, status)
-
-		if err != nil {
-			log.Error("Failed to update status:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Status updated successfully")
-	}
-}
-
-func deleteStatusHandler(log *slog.Logger, service StatusService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Status.delete"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		statusId, err := strconv.Atoi(chi.URLParam(r, "id"))
-		err = service.DeleteStatus(statusId)
-
-		if err != nil {
-			log.Error("Failed to delete status:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		log.Info("Status deleted successfully")
-	}
 }

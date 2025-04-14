@@ -74,6 +74,13 @@ func NewTrack(log *slog.Logger, service *service.TrackService) *chi.Mux {
 			r.Post("/", registerTeamHandler(log, service, validate))
 		})
 
+		//r.Route("/judge", func(r chi.Router) {
+		//	r.Get("/", getWinnerRecordsHandler(log, service))
+		//	r.Post("/", createWinnerRecordHandler(log, service, validate))
+		//	r.Put("/", changeWinnerRecordHandler(log, service, validate))
+		//	r.Delete("/", deleteWinnerRecordHandler(log, service))
+		//})
+
 		r.Route("/{id}", func(r chi.Router) {
 			r.Get("/", getTracksByIDHandler(log, service))
 			r.Put("/", updateTrackHandler(log, service, validate))

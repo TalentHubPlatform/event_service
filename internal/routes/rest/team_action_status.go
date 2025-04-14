@@ -91,6 +91,16 @@ func getTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusServic
 	}
 }
 
+// @Summary Create a new TeamActionStatus
+// @Description Creates a new TeamActionStatus based on the provided data.
+// @Tags TeamActionStatus
+// @Accept json
+// @Produce json
+// @Param teamActionStatus body schemas.TeamActionStatus true "TeamActionStatus data"
+// @Success 201 {object} schemas.TeamActionStatusResponse "Successfully created TeamActionStatus"
+// @Failure 400 {string} string "Invalid input data"
+// @Failure 500 {string} string "Internal server error"
+// @Router /team-action-status [post]
 func createTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusService, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "rest.TeamActionStatus.create"
