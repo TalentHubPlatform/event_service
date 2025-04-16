@@ -124,17 +124,21 @@ func (s *DateService) UpdateDate(id int, date api.DateUpdate) (*api.DateResponse
 		err = tx.Commit()
 	}()
 
-	_, err = s.repo.ChangeDateStart(tx, id, date.DateStart)
-	if err != nil {
-		return nil, err
+	if date.DateStart != nil {
+		_, err = s.repo.ChangeDateStart(tx, id, date.DateStart)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	model, err := s.repo.ChangeDateEnd(tx, id, date.DateEnd)
-	if err != nil {
-		return nil, err
+	if date.DateEnd != nil {
+		_, err = s.repo.ChangeDateEnd(tx, id, date.DateEnd)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return SingleDateConvert(model), nil
+	return s.GetDateByID(id)
 }
 
 func (s *DateService) DeleteDate(id int) error {

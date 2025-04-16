@@ -39,7 +39,6 @@ func (h *LocationHandler) GetLocation(ctx echo.Context) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	locations, err := h.service.GetAllLocations()
@@ -61,7 +60,6 @@ func (h *LocationHandler) GetLocationId(ctx echo.Context, id locationapi.Id) err
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	location, err := h.service.GetLocationById(int(id))
@@ -83,7 +81,6 @@ func (h *LocationHandler) PostLocation(ctx echo.Context) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	var location locationapi.Location
@@ -114,7 +111,6 @@ func (h *LocationHandler) PutLocationId(ctx echo.Context, id locationapi.Id) err
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	var location locationapi.LocationUpdate
@@ -145,7 +141,6 @@ func (h *LocationHandler) DeleteLocationId(ctx echo.Context, id locationapi.Id) 
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	err := h.service.DeleteLocation(int(id))
@@ -174,23 +169,23 @@ func NewLocation(log *slog.Logger, service *service.LocationService) *chi.Mux {
 
 	handler := NewLocationHandler(log, service, validate)
 
-	r.Route("/location", func(r chi.Router) {
+	r.Route("/", func(r chi.Router) {
 		r.Get("/", HandlerAdapter(handler.GetLocation))
 		r.Post("/", HandlerAdapter(handler.PostLocation))
 
-		r.Route("/{id}", func(r chi.Router) {
+		r.Route("/{Id}", func(r chi.Router) {
 			r.Get("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
 				return handler.GetLocationId(ctx, locationapi.Id(id))
 			}))
 
 			r.Put("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
 				return handler.PutLocationId(ctx, locationapi.Id(id))
 			}))
 
 			r.Delete("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
 				return handler.DeleteLocationId(ctx, locationapi.Id(id))
 			}))
 		})

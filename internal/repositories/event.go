@@ -21,7 +21,7 @@ func (r *EventRepository) Create(tx *pg.Tx, event *models.Event) (*models.Event,
 
 func (r *EventRepository) GetAllEvents(tx *pg.Tx) ([]*models.Event, error) {
 	events := make([]*models.Event, 0)
-	err := tx.Model(&events).Relation("Date").Relation("Statuses").Select()
+	err := tx.Model(&events).Relation("Date").Select()
 	return events, err
 }
 
@@ -45,7 +45,7 @@ func (r *EventRepository) GetAllEventsToStart(tx *pg.Tx) ([]*models.Event, error
 
 func (r *EventRepository) GetAllEventsToEnd(tx *pg.Tx) ([]*models.Event, error) {
 	events := make([]*models.Event, 0)
-	err := tx.Model(&events).Relation("Date").Where("date.date_end >= NOW() AND status = 'in_process'").Select()
+	err := tx.Model(&events).Relation("Date").Where("date.date_end <= NOW() AND status = 'in_process'").Select()
 	return events, err
 }
 

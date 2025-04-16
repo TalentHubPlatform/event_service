@@ -13,7 +13,6 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/swaggo/http-swagger"
 	"log/slog"
 	"net/http"
 	"os"
@@ -25,20 +24,6 @@ const (
 	envProd  = "prod"
 )
 
-// @title Swagger Example API
-// @version 1.0
-// @description This is a sample server Petstore server.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host petstore.swagger.io
-// @BasePath /v2
 func main() {
 	cfg := config.MustLoad()
 	fmt.Println(cfg)
@@ -59,15 +44,15 @@ func main() {
 	InitPrometheus()
 
 	router := chi.NewRouter()
-	router.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	router.Mount("/event", createEventHandler(db, logger))
-	router.Mount("/date", createDateHandler(db, logger))
+	router.Mount("/dates", createDateHandler(db, logger))
 	router.Mount("/status", createStatusHandler(db, logger))
 	router.Mount("/location", createLocationHandler(db, logger))
 	router.Mount("/track", createTrackHandler(db, logger))
 	router.Mount("/timeline", createTimelineHandler(db, logger))
 	router.Mount("/team-action-status", createTeamActionStatusHandler(db, logger))
+	router.Mount("/track-winner", createTrackWinnerHandler(db, logger))
 
 	router.Handle("/metrics", promhttp.Handler())
 
@@ -90,8 +75,6 @@ func main() {
 
 func InitM2M() {
 	orm.RegisterTable((*models.EventLocation)(nil))
-	orm.RegisterTable((*models.StatusEvent)(nil))
-	orm.RegisterTable((*models.StatusTrack)(nil))
 	orm.RegisterTable((*models.EventPrize)(nil))
 	orm.RegisterTable((*models.TeamActionStatus)(nil))
 	orm.RegisterTable((*models.LocationTrack)(nil))
@@ -138,8 +121,10 @@ func createDateHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 
 func createEventHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 	eventRepository := repositories.NewEventRepository(db)
+	eventLocationRepository := repositories.NewEventLocationRepository(db)
+	trackRepository := repositories.NewTrackRepository(db)
 
-	eventService := service.NewEventsService(eventRepository, db)
+	eventService := service.NewEventsService(eventRepository, trackRepository, eventLocationRepository, db)
 	go utils.ScheduleEvents(logger, eventService)
 
 	return rest.NewEvent(logger, eventService)
@@ -161,7 +146,9 @@ func createLocationHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 
 func createTrackHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 	trackRepository := repositories.NewTrackRepository(db)
+
 	trackService := service.NewTrackService(trackRepository, db)
+	go utils.ScheduleTracks(logger, trackService)
 
 	return rest.NewTrack(logger, trackService)
 }
@@ -179,4 +166,13 @@ func createTeamActionStatusHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
 	teamActionStatusService := service.NewTeamActionStatusService(teamActionStatusRepository, db)
 
 	return rest.NewTeamActionStatus(logger, teamActionStatusService)
+}
+
+func createTrackWinnerHandler(db *pg.DB, logger *slog.Logger) *chi.Mux {
+	trackWinnerRepository := repositories.NewTrackWinnerRepository(db)
+	trackRepository := repositories.NewTrackRepository(db)
+	timelineRepository := repositories.NewTimelineRepository(db)
+
+	trackWinnerService := service.NewTrackWinnerService(trackWinnerRepository, trackRepository, timelineRepository, db)
+	return rest.NewTrackWinner(logger, trackWinnerService)
 }

@@ -3,10 +3,16 @@ package repositories
 import (
 	"event_service/internal/models"
 	"github.com/go-pg/pg/v10"
+	"sort"
 )
 
 type TeamActionStatusRepository struct {
 	DB *pg.DB
+}
+
+type AggregateResult struct {
+	TeamId     int
+	TotalValue int
 }
 
 func NewTeamActionStatusRepository(db *pg.DB) *TeamActionStatusRepository {
@@ -47,4 +53,36 @@ func (r *TeamActionStatusRepository) DeleteTeamActionStatus(tx *pg.Tx, teamID in
 	teamActionStatus := new(models.TeamActionStatus)
 	_, err := tx.Model(teamActionStatus).Where("track_team_id = ?", teamID).Where("timeline_id = ?", timelineID).Delete()
 	return err
+}
+
+func (r *TeamActionStatusRepository) AggregateResults(tx *pg.Tx, trackId int, limit int, offset int) ([]*AggregateResult, error) {
+	var results []*AggregateResult
+
+	query := `
+        SELECT 
+            tas.track_team_id AS team_id,
+            SUM(tas.result_value) AS total_value
+        FROM 
+            team_action_status tas
+        JOIN 
+        	timeline t
+        ON
+        	t.id = tas.timeline_id
+    	WHERE
+            t.track_id = ?
+        GROUP BY 
+            tas.track_team_id
+        LIMIT ? OFFSET ?
+    `
+
+	_, err := tx.Query(&results, query, trackId, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].TotalValue > results[j].TotalValue
+	})
+
+	return results, nil
 }

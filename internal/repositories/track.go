@@ -61,3 +61,15 @@ func (r *TrackRepository) DeleteTrack(tx *pg.Tx, trackID int) error {
 	_, err := tx.Model(track).Where("id = ?", trackID).Delete()
 	return err
 }
+
+func (r *TrackRepository) GetAllTracksToStart(tx *pg.Tx) ([]*models.Track, error) {
+	tracks := make([]*models.Track, 0)
+	err := tx.Model(&tracks).Relation("Date").Where("date.date_start <= NOW() AND status = 'planned'").Select()
+	return tracks, err
+}
+
+func (r *TrackRepository) GetAllTracksToEnd(tx *pg.Tx) ([]*models.Track, error) {
+	tracks := make([]*models.Track, 0)
+	err := tx.Model(&tracks).Relation("Date").Where("date.date_end <= NOW() AND status = 'planned'").Select()
+	return tracks, err
+}

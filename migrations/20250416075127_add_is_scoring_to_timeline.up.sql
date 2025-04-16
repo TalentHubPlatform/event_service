@@ -1,0 +1,2 @@
+ALTER TABLE timeline
+ADD is_scoring BOOLEAN NOT NULL DEFAULT true;

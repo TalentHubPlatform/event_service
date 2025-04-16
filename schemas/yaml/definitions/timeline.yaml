@@ -1,0 +1,96 @@
+components:
+  schemas:
+    Timeline:
+      required:
+        - title
+        - description
+        - deadline
+        - is_blocking
+        - status
+        - track_id
+        - timeline_status_id
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Timeline"
+        description:
+          type: string
+          example: "Description"
+        deadline:
+          type: string
+          format: date-time
+          example: "2020-01-01T00:00:00Z"
+        is_blocking:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: "ready"
+        track_id:
+          type: integer
+          example: 1
+        timeline_status_id:
+          type: integer
+          example: 1
+
+    TimelineResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Timeline'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+
+    TimelineUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Timeline"
+        description:
+          type: string
+          example: "Description"
+        deadline:
+          type: string
+          format: date-time
+          example: "2020-01-01T00:00:00Z"
+        is_blocking:
+          type: string
+          example: "true"
+        status:
+          type: string
+          example: "ready"
+        track_id:
+          type: integer
+          example: 1
+        timeline_status_id:
+          type: integer
+          example: 1
+    TimelineStatusResponse:
+      required:
+        - count_num
+      properties:
+        count_num:
+          type: integer
+          example: 1
+
+  requestBodies:
+    Timeline:
+      description: Данные для создания новой временной шкалы
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Timeline'
+
+    TimelineUpdate:
+      description: Данные для обновления временной шкалы
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TimelineUpdate'

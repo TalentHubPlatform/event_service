@@ -21,6 +21,13 @@ components:
       description: Идентификатор таймлайна
       schema:
         type: integer
+    Status:
+      name: Status
+      in: query
+      required: false
+      description: Статус
+      schema:
+        type: string
     XTeamId:
       name: XTeamId
       in: header
@@ -33,5 +40,12 @@ components:
       in: header
       required: false
       description: Header идентификатор таймлайна
+      schema:
+        type: integer
+    XTrackId:
+      name: XTrackId
+      in: header
+      required: false
+      description: Header идентификатор трека
       schema:
         type: integer

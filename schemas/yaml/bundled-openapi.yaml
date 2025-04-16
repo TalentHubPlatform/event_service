@@ -3,7 +3,7 @@ info:
   title: Event Service
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8081
 paths:
   /dates:
     get:
@@ -271,6 +271,99 @@ paths:
       responses:
         '200':
           description: Удаленный результат
+  /timeline:
+    get:
+      tags:
+        - Timeline
+      summary: Получить таймлайн поинты по треку и статусу
+      parameters:
+        - $ref: '#/components/parameters/XTrackId'
+        - $ref: '#/components/parameters/Status'
+      responses:
+        '200':
+          description: Список таймлайн поинтов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimelineResponse'
+    post:
+      tags:
+        - Timeline
+      summary: Создать таймлайн поинт
+      requestBody:
+        $ref: '#/components/requestBodies/Timeline'
+      responses:
+        '200':
+          description: Созданный таймлайн
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineResponse'
+  /timelime/status:
+    get:
+      tags:
+        - Timeline
+      summary: Получить все статусы таймлайн статусов
+      responses:
+        '200':
+          description: Список таймлайн статусов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimelineStatusResponse'
+    post:
+      tags:
+        - Timeline
+      summary: Создать таймлайн статус
+      responses:
+        '200':
+          description: Созданный таймлайн статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineStatusResponse'
+  /timeline/{Id}:
+    get:
+      tags:
+        - Timeline
+      summary: Получить таймлайн поинт по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Конкретный таймлайн поинт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineStatusResponse'
+    put:
+      tags:
+        - Timeline
+      summary: Изменить таймлайн поинт по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        $ref: '#/components/requestBodies/TimelineUpdate'
+      responses:
+        '200':
+          description: Обновленный таймлайн поинт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineStatusResponse'
+    delete:
+      tags:
+        - Timeline
+      summary: Изменить таймлайн поинт по Id
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленный таймлайн поинт
 components:
   schemas:
     Date:
@@ -407,6 +500,81 @@ components:
         notes:
           type: string
           example: Notes
+    Timeline:
+      required:
+        - title
+        - description
+        - deadline
+        - is_blocking
+        - status
+        - track_id
+        - timeline_status_id
+      type: object
+      properties:
+        title:
+          type: string
+          example: Timeline
+        description:
+          type: string
+          example: Description
+        deadline:
+          type: string
+          format: date-time
+          example: '2020-01-01T00:00:00Z'
+        is_blocking:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: ready
+        track_id:
+          type: integer
+          example: 1
+        timeline_status_id:
+          type: integer
+          example: 1
+    TimelineResponse:
+      required:
+        - id
+      allOf:
+        - $ref: '#/components/schemas/Timeline'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+    TimelineStatusResponse:
+      required:
+        - count_num
+      properties:
+        count_num:
+          type: integer
+          example: 1
+    TimelineUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Timeline
+        description:
+          type: string
+          example: Description
+        deadline:
+          type: string
+          format: date-time
+          example: '2020-01-01T00:00:00Z'
+        is_blocking:
+          type: string
+          example: 'true'
+        status:
+          type: string
+          example: ready
+        track_id:
+          type: integer
+          example: 1
+        timeline_status_id:
+          type: integer
+          example: 1
   requestBodies:
     Date:
       description: Данные для создания новой даты
@@ -464,6 +632,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TeamActionStatusUpdate'
+    Timeline:
+      description: Данные для создания новой временной шкалы
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Timeline'
+    TimelineUpdate:
+      description: Данные для обновления временной шкалы
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TimelineUpdate'
   parameters:
     Id:
       name: Id
@@ -500,3 +682,17 @@ components:
       description: Идентификатор таймлайна
       schema:
         type: integer
+    XTrackId:
+      name: XTrackId
+      in: header
+      required: false
+      description: Header идентификатор трека
+      schema:
+        type: integer
+    Status:
+      name: Status
+      in: query
+      required: false
+      description: Статус
+      schema:
+        type: string

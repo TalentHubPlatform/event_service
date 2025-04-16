@@ -71,3 +71,20 @@ func (r *TimelineRepository) DeleteTimeline(tx *pg.Tx, timelineID int) error {
 	_, err := tx.Model(&models.Timeline{}).Where("id = ?", timelineID).Delete()
 	return err
 }
+
+func (r *TimelineRepository) GetMaxValue(tx *pg.Tx, trackId int) (int, error) {
+	query := `
+        SELECT SUM(CASE WHEN is_scoring THEN 100 ELSE 0 END) AS total_value
+        FROM timeline
+        WHERE track_id = ?
+    `
+
+	var result int
+
+	_, err := tx.QueryOne(pg.Scan(&result), query, trackId)
+	if err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}

@@ -10,6 +10,7 @@ type Timeline struct {
 	Description string    `pg:"description"`
 	Deadline    time.Time `pg:"deadline"`
 	IsBlocking  bool      `pg:"is_blocking,notnull"`
+	IsScoring   bool      `pg:"is_scoring"`
 	Status      string    `pg:"status"`
 
 	TrackID int    `pg:"track_id"`

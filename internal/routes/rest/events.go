@@ -28,6 +28,14 @@ type EventService interface {
 	RemoveLocationFromEvent(statusEventSchema *schemas.EventLocation) error
 }
 
+func DecodeAndValidate(r *http.Request, dst interface{}, validate *validator.Validate) error {
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
+		return err
+	}
+
+	return validate.Struct(dst)
+}
+
 func NewEvent(log *slog.Logger, service *service.EventService) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -128,7 +136,7 @@ func createEventHandler(log *slog.Logger, service EventService, validate *valida
 		)
 
 		var event schemas.Event
-		if err := decodeAndValidate(r, &event, validate); err != nil {
+		if err := DecodeAndValidate(r, &event, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -166,7 +174,7 @@ func updateEventHandler(log *slog.Logger, service EventService, validate *valida
 		eventId, err := strconv.Atoi(chi.URLParam(r, "id"))
 
 		var event schemas.EventUpdate
-		if err := decodeAndValidate(r, &event, validate); err != nil {
+		if err := DecodeAndValidate(r, &event, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)

@@ -14,7 +14,7 @@ type Event struct {
 
 	DateID int   `pg:"date_id"`
 	Date   *Date `pg:"rel:has-one"`
-
+	
 	Locations   []Location   `pg:"many2many:event_location"`
 	Tracks      []Track      `pg:"rel:has-many"`
 	EventPrizes []EventPrize `pg:"rel:has-many"`

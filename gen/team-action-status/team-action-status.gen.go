@@ -22,12 +22,13 @@ type TeamActionStatus struct {
 
 // TeamActionStatusResponse defines model for TeamActionStatusResponse.
 type TeamActionStatusResponse struct {
-	CompletedAt    time.Time `json:"completed_at"`
-	Notes          string    `json:"notes"`
-	ResolutionLink string    `json:"resolution_link"`
-	ResultValue    int       `json:"result_value"`
-	TimelineId     *int      `json:"timeline_id,omitempty"`
-	TrackTeamId    *int      `json:"track_team_id,omitempty"`
+	CompletedAt      time.Time `json:"completed_at"`
+	Notes            string    `json:"notes"`
+	ResolutionLink   string    `json:"resolution_link"`
+	ResultValue      int       `json:"result_value"`
+	TimelineId       *int      `json:"timeline_id,omitempty"`
+	TimelineStatusId *int      `json:"timeline_status_id,omitempty"`
+	TrackTeamId      *int      `json:"track_team_id,omitempty"`
 }
 
 // TeamActionStatusUpdate defines model for TeamActionStatusUpdate.

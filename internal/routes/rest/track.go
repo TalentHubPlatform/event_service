@@ -26,10 +26,6 @@ type TrackService interface {
 	AddLocationToTrack(*schemas.LocationTrack) (*models.LocationTrack, error)
 	RemoveLocationFromTrack(*schemas.LocationTrack) error
 
-	GetAllTrackStatuses(int) ([]*models.Status, error)
-	AddStatusToTrack(*schemas.StatusTrack) (*models.StatusTrack, error)
-	RemoveStatusFromTrack(*schemas.StatusTrack) error
-
 	GetRegisteredTeams(int) ([]*models.TrackTeam, error)
 	GetCertainRegisteredTeam(int, int) (*models.TrackTeam, error)
 	RegisterTeam(*schemas.TrackTeam) (*models.TrackTeam, error)
@@ -50,15 +46,6 @@ func NewTrack(log *slog.Logger, service *service.TrackService) *chi.Mux {
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", getAllTracksHandler(log, service))
 		r.Post("/", createTrackHandler(log, service, validate))
-
-		r.Route("/status", func(r chi.Router) {
-			r.Post("/", addStatusToTrackHandler(log, service))
-
-			r.Route("/{id}", func(r chi.Router) {
-				r.Get("/", getAllTrackStatusesHandler(log, service))
-				r.Delete("/", removeStatusFromTrackHandler(log, service))
-			})
-		})
 
 		r.Route("/location", func(r chi.Router) {
 			r.Post("/", addLocationToTrackHandler(log, service))
@@ -163,7 +150,7 @@ func createTrackHandler(log *slog.Logger, service TrackService, validate *valida
 		)
 
 		var track schemas.Track
-		if err := decodeAndValidate(r, &track, validate); err != nil {
+		if err := DecodeAndValidate(r, &track, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -201,7 +188,7 @@ func updateTrackHandler(log *slog.Logger, service TrackService, validate *valida
 		trackId, err := strconv.Atoi(chi.URLParam(r, "id"))
 
 		var track schemas.TrackUpdate
-		if err := decodeAndValidate(r, &track, validate); err != nil {
+		if err := DecodeAndValidate(r, &track, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -248,125 +235,6 @@ func deleteTrackHandler(log *slog.Logger, service TrackService) http.HandlerFunc
 
 		w.WriteHeader(http.StatusOK)
 		log.Info("Track deleted successfully")
-	}
-}
-
-func getAllTrackStatusesHandler(log *slog.Logger, service TrackService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Track.statusGet"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		trackId, err := strconv.Atoi(chi.URLParam(r, "id"))
-		statuses, err := service.GetAllTrackStatuses(trackId)
-
-		if err != nil {
-			log.Error("Failed to get statuses by track:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(statuses); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Statuses by track fetched successfully")
-	}
-}
-
-func addStatusToTrackHandler(log *slog.Logger, service TrackService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Track.statusCreate"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		headersList := map[string]string{
-			"TrackId":  "int",
-			"StatusId": "int",
-		}
-
-		convertedHeaders, err := utils.ValidateHeaders(headersList, log, r)
-		if err != nil {
-			log.Error("Failed to validate headers:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		newStatus, err := service.AddStatusToTrack(&schemas.StatusTrack{
-			StatusID: convertedHeaders["StatusId"].(int),
-			TrackID:  convertedHeaders["TrackId"].(int),
-		})
-
-		if err != nil {
-			log.Error("Failed to add status to track:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(newStatus); err != nil {
-			log.Error("Failed to encode response:", err.Error())
-
-			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		}
-
-		log.Info("Status added to track successfully")
-	}
-}
-
-func removeStatusFromTrackHandler(log *slog.Logger, service TrackService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "rest.Track.statusDelete"
-
-		log := log.With(
-			slog.String("op", op),
-			slog.String("request_id", middleware.GetReqID(r.Context())),
-		)
-
-		queryParams := r.URL.Query()
-
-		if queryParams.Get("status_id") == "" {
-			log.Error("Missing 'status_id' in query")
-
-			http.Error(w, "Missing 'status_id' in query", http.StatusBadRequest)
-			return
-		}
-
-		trackId, err := strconv.Atoi(chi.URLParam(r, "id"))
-		statusId, err := strconv.Atoi(queryParams.Get("status_id"))
-		if err != nil {
-			log.Error("Invalid format of status_id:", err.Error())
-
-			http.Error(w, fmt.Sprintf("Invalid format of status_id query, expected number, got %s", queryParams.Get("status_id")), http.StatusBadRequest)
-			return
-		}
-
-		err = service.RemoveStatusFromTrack(&schemas.StatusTrack{
-			TrackID:  trackId,
-			StatusID: statusId,
-		})
-
-		if err != nil {
-			log.Error("Failed to remove status from track:", err.Error())
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		log.Info("Status deleted from track successfully")
 	}
 }
 
@@ -540,7 +408,7 @@ func registerTeamHandler(log *slog.Logger, service TrackService, validate *valid
 		)
 
 		var trackTeam schemas.TrackTeam
-		if err := decodeAndValidate(r, &trackTeam, validate); err != nil {
+		if err := DecodeAndValidate(r, &trackTeam, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -579,7 +447,7 @@ func updateRegisteredTeamHandler(log *slog.Logger, service TrackService, validat
 		teamId, err := strconv.Atoi(chi.URLParam(r, "teamId"))
 
 		var trackTeam schemas.TrackTeamUpdate
-		if err := decodeAndValidate(r, &trackTeam, validate); err != nil {
+		if err := DecodeAndValidate(r, &trackTeam, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)

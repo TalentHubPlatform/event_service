@@ -5,11 +5,11 @@ info:
 servers:
   - url: http://localhost:8081
 paths:
-  /dates:
+  /date/dates:
     $ref: './api/date.yaml#/paths/~1dates'
-  /dates/{Id}:
+  /date/dates/{Id}:
     $ref: './api/date.yaml#/paths/~1dates~1{Id}'
-  /location:
+  /location/location:
     $ref: './api/locations.yaml#/paths/~1location'
   /location/{Id}:
     $ref: './api/locations.yaml#/paths/~1location~1{Id}'
@@ -21,3 +21,9 @@ paths:
     $ref: './api/team_action_status.yaml#/paths/~1team-action-status'
   /team-action-status/{TimelineId}/{TeamId}:
     $ref: './api/team_action_status.yaml#/paths/~1team-action-status~1{TimelineId}~1{TeamId}'
+  /timeline:
+    $ref: './api/timeline.yaml#/paths/~1timeline'
+  /timelime/status:
+    $ref: './api/timeline.yaml#/paths/~1timeline~1status'
+  /timeline/{Id}:
+    $ref: './api/timeline.yaml#/paths/~1timeline~1{Id}'

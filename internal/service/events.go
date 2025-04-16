@@ -8,15 +8,21 @@ import (
 )
 
 type EventService struct {
-	repo              *repositories.EventRepository
+	repo *repositories.EventRepository
+
+	trackRepository   *repositories.TrackRepository
 	locationEventRepo *repositories.EventLocationRepository
-	db                *pg.DB
+
+	db *pg.DB
 }
 
-func NewEventsService(repo *repositories.EventRepository, db *pg.DB) *EventService {
+func NewEventsService(repo *repositories.EventRepository, trackRepository *repositories.TrackRepository,
+	locationEventRepo *repositories.EventLocationRepository, db *pg.DB) *EventService {
 	return &EventService{
-		repo: repo,
-		db:   db,
+		repo:              repo,
+		trackRepository:   trackRepository,
+		locationEventRepo: locationEventRepo,
+		db:                db,
 	}
 }
 
@@ -189,7 +195,7 @@ func (s *EventService) GetAllEventsToEnd() (_ []*models.Event, err error) {
 		_ = tx.Commit()
 	}()
 
-	return s.repo.GetAllEventsToStart(tx)
+	return s.repo.GetAllEventsToEnd(tx)
 }
 
 func (s *EventService) StartEvent(eventID int) (_ *models.Event, err error) {

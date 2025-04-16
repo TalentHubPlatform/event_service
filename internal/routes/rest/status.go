@@ -38,7 +38,6 @@ func (h *StatusHandler) GetStatus(ctx echo.Context) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	statuses, err := h.service.GetAllStatuses()
@@ -60,7 +59,7 @@ func (h *StatusHandler) GetStatusId(ctx echo.Context, id status_api.Id) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
+		slog.String("id", strconv.Itoa(id)),
 	)
 
 	status, err := h.service.GetStatusById(int(id))
@@ -82,7 +81,6 @@ func (h *StatusHandler) PostStatus(ctx echo.Context) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
 	)
 
 	var status status_api.Status
@@ -113,7 +111,6 @@ func (h *StatusHandler) PutStatusId(ctx echo.Context, id status_api.Id) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	var status status_api.StatusUpdate
@@ -144,7 +141,6 @@ func (h *StatusHandler) DeleteStatusId(ctx echo.Context, id status_api.Id) error
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)),
 	)
 
 	err := h.service.DeleteStatus(int(id))
@@ -173,23 +169,24 @@ func NewStatus(log *slog.Logger, service StatusService) *chi.Mux {
 
 	handler := NewStatusHandler(log, service, validate)
 
-	r.Route("/status", func(r chi.Router) {
+	r.Route("/", func(r chi.Router) {
 		r.Get("/", HandlerAdapter(handler.GetStatus))
 		r.Post("/", HandlerAdapter(handler.PostStatus))
 
-		r.Route("/{id}", func(r chi.Router) {
+		r.Route("/{Id}", func(r chi.Router) {
 			r.Get("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
+				log.Info(ctx.Param("Id"))
 				return handler.GetStatusId(ctx, status_api.Id(id))
 			}))
 
 			r.Put("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
 				return handler.PutStatusId(ctx, status_api.Id(id))
 			}))
 
 			r.Delete("/", HandlerAdapter(func(ctx echo.Context) error {
-				id, _ := strconv.Atoi(ctx.Param("id"))
+				id, _ := strconv.Atoi(ctx.Param("Id"))
 				return handler.DeleteStatusId(ctx, status_api.Id(id))
 			}))
 		})

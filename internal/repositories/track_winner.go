@@ -13,9 +13,9 @@ func NewTrackWinnerRepository(db *pg.DB) *TrackWinnerRepository {
 	return &TrackWinnerRepository{DB: db}
 }
 
-func (r *TrackWinnerRepository) Create(tx *pg.Tx, trackWinner *models.TrackWinner) error {
+func (r *TrackWinnerRepository) Create(tx *pg.Tx, trackWinner *models.TrackWinner) (*models.TrackWinner, error) {
 	_, err := tx.Model(trackWinner).Insert()
-	return err
+	return trackWinner, err
 }
 
 func (r *TrackWinnerRepository) GetAllTrackWinners(tx *pg.Tx) ([]*models.TrackWinner, error) {

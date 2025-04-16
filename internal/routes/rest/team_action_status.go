@@ -91,16 +91,6 @@ func getTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusServic
 	}
 }
 
-// @Summary Create a new TeamActionStatus
-// @Description Creates a new TeamActionStatus based on the provided data.
-// @Tags TeamActionStatus
-// @Accept json
-// @Produce json
-// @Param teamActionStatus body schemas.TeamActionStatus true "TeamActionStatus data"
-// @Success 201 {object} schemas.TeamActionStatusResponse "Successfully created TeamActionStatus"
-// @Failure 400 {string} string "Invalid input data"
-// @Failure 500 {string} string "Internal server error"
-// @Router /team-action-status [post]
 func createTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusService, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "rest.TeamActionStatus.create"
@@ -111,7 +101,7 @@ func createTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusSer
 		)
 
 		var teamActionStatus schemas.TeamActionStatus
-		if err := decodeAndValidate(r, &teamActionStatus, validate); err != nil {
+		if err := DecodeAndValidate(r, &teamActionStatus, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -181,7 +171,7 @@ func updateTeamActionStatusHandler(log *slog.Logger, service TeamActionStatusSer
 		teamId, _ := strconv.Atoi(chi.URLParam(r, "teamId"))
 
 		var teamActionStatus schemas.TeamActionStatusUpdate
-		if err := decodeAndValidate(r, &teamActionStatus, validate); err != nil {
+		if err := DecodeAndValidate(r, &teamActionStatus, validate); err != nil {
 			log.Error("Failed to decode request:", err.Error())
 
 			http.Error(w, err.Error(), http.StatusBadRequest)

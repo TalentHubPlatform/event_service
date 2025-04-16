@@ -132,6 +132,7 @@ components:
       required:
         - track_team_id
         - timeline_id
+        - timeline_status_id
       allOf:
         - $ref: '#/components/schemas/TeamActionStatus'
         - type: object
@@ -140,6 +141,9 @@ components:
               type: integer
               example: 1
             timeline_id:
+              type: integer
+              example: 1
+            timeline_status_id:
               type: integer
               example: 1
     TeamActionStatusUpdate:

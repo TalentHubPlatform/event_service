@@ -1,0 +1,99 @@
+tags:
+  - name: Timeline
+    description: Таймлайн поинты событий
+
+paths:
+  /timeline:
+    get:
+      tags:
+        - Timeline
+      summary: Получить таймлайн поинты по треку и статусу
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/XTrackId'
+        - $ref: '../definitions.yaml#/components/parameters/Status'
+      responses:
+        '200':
+          description: Список таймлайн поинтов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../definitions/timeline.yaml#/components/schemas/TimelineResponse'
+    post:
+      tags:
+        - Timeline
+      summary: Создать таймлайн поинт
+      requestBody:
+        $ref: '../definitions/timeline.yaml#/components/requestBodies/Timeline'
+      responses:
+        '200':
+          description: Созданный таймлайн
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/timeline.yaml#/components/schemas/TimelineResponse'
+
+  /timeline/status:
+    get:
+      tags:
+        - Timeline
+      summary: Получить все статусы таймлайн статусов
+      responses:
+        '200':
+          description: Список таймлайн статусов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '../definitions/timeline.yaml#/components/schemas/TimelineStatusResponse'
+    post:
+      tags:
+        - Timeline
+      summary: Создать таймлайн статус
+      responses:
+        '200':
+          description: Созданный таймлайн статус
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/timeline.yaml#/components/schemas/TimelineStatusResponse'
+  /timeline/{Id}:
+    get:
+      tags:
+        - Timeline
+      summary: Получить таймлайн поинт по Id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Конкретный таймлайн поинт
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/timeline.yaml#/components/schemas/TimelineStatusResponse'
+    put:
+      tags:
+        - Timeline
+      summary: Изменить таймлайн поинт по Id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      requestBody:
+        $ref: '../definitions/timeline.yaml#/components/requestBodies/TimelineUpdate'
+      responses:
+        '200':
+          description: Обновленный таймлайн поинт
+          content:
+            application/json:
+              schema:
+                $ref: '../definitions/timeline.yaml#/components/schemas/TimelineStatusResponse'
+    delete:
+      tags:
+        - Timeline
+      summary: Изменить таймлайн поинт по Id
+      parameters:
+        - $ref: '../definitions.yaml#/components/parameters/Id'
+      responses:
+        '200':
+          description: Удаленный таймлайн поинт

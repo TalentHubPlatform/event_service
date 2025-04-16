@@ -133,6 +133,7 @@ func (s *StatusService) UpdateStatus(eventId int, newStatus status_api.StatusUpd
 	}
 
 	model := &models.Status{
+		ID:    eventId,
 		Title: status.Title,
 	}
 

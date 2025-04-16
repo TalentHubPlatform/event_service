@@ -12,7 +12,6 @@ import (
 type TrackService struct {
 	repo *repositories.TrackRepository
 
-	statusTrackRepo   *repositories.StatusTrackRepository
 	locationTrackRepo *repositories.LocationTrackRepository
 	trackTeamRepo     *repositories.TrackTeamRepository
 
@@ -44,7 +43,7 @@ func (s *TrackService) GetAllTracks() ([]*models.Track, error) {
 	return s.repo.GetAllTracks(tx)
 }
 
-func (s *TrackService) GetTrackById(eventId int) (*models.Track, error) {
+func (s *TrackService) GetTrackById(trackId int) (_ *models.Track, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -59,7 +58,97 @@ func (s *TrackService) GetTrackById(eventId int) (*models.Track, error) {
 		err = tx.Commit()
 	}()
 
-	return s.repo.GetTrackByID(tx, eventId)
+	return s.repo.GetTrackByID(tx, trackId)
+}
+
+func (s *TrackService) GetTracksByEventId(eventId int) (_ []*models.Track, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	return s.repo.GetAllTracksByEventID(tx, eventId)
+}
+
+func (s *TrackService) StartTrack(trackId int) (_ *models.Track, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	return s.UpdateTrack(trackId, schemas.TrackUpdate{Status: "in_process"})
+}
+
+func (s *TrackService) EndTrack(trackId int) (_ *models.Track, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		_ = tx.Commit()
+	}()
+
+	return s.UpdateTrack(trackId, schemas.TrackUpdate{Status: "completed"})
+}
+
+func (s *TrackService) GetAllTracksToStart() (_ []*models.Track, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	return s.repo.GetAllTracksToStart(tx)
+}
+
+func (s *TrackService) GetAllTracksToEnd() (_ []*models.Track, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	return s.repo.GetAllTracksToEnd(tx)
 }
 
 func (s *TrackService) CreateTrack(track schemas.Track) (_ *models.Track, err error) {
@@ -211,65 +300,6 @@ func (s *TrackService) RemoveLocationFromTrack(locationTrackSchema *schemas.Loca
 	}()
 
 	return s.locationTrackRepo.DeleteTrackLocation(tx, locationTrackSchema.TrackId, locationTrackSchema.LocationId)
-}
-
-func (s *TrackService) GetAllTrackStatuses(trackId int) (_ []*models.Status, err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-
-		_ = tx.Commit()
-	}()
-
-	return s.statusTrackRepo.GetAllStatusTracks(tx, trackId)
-}
-
-func (s *TrackService) AddStatusToTrack(statusTrackSchema *schemas.StatusTrack) (_ *models.StatusTrack, err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-
-		_ = tx.Commit()
-	}()
-
-	statusTrackModel := &models.StatusTrack{
-		TrackID:  statusTrackSchema.TrackID,
-		StatusID: statusTrackSchema.StatusID,
-	}
-
-	return s.statusTrackRepo.Create(tx, statusTrackModel)
-}
-
-func (s *TrackService) RemoveStatusFromTrack(statusTrackSchema *schemas.StatusTrack) (err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-
-		_ = tx.Commit()
-	}()
-
-	return s.statusTrackRepo.DeleteStatusTrack(tx, statusTrackSchema.StatusID, statusTrackSchema.StatusID)
 }
 
 func (s *TrackService) GetRegisteredTeams(trackId int) (_ []*models.TrackTeam, err error) {

@@ -32,7 +32,7 @@ func (r *StatusRepository) GetStatusById(tx *pg.Tx, id int) (*models.Status, err
 
 func (r *StatusRepository) UpdateStatus(tx *pg.Tx, newStatus *models.Status) (*models.Status, error) {
 	event := new(models.Status)
-	_, err := tx.Model(event).Set("title = ?, description = ?", newStatus.Title, newStatus.Description).Returning("*").Update()
+	_, err := tx.Model(event).Set("title = ?, description = ?", newStatus.Title, newStatus.Description).Where("id = ?", newStatus.ID).Returning("*").Update()
 	return event, err
 }
 

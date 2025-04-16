@@ -1,10 +1,11 @@
 package service
 
 import (
+	timeline_api "event_service/gen/timeline"
 	"event_service/internal/models"
 	"event_service/internal/repositories"
-	"event_service/internal/schemas"
 	"github.com/go-pg/pg/v10"
+	"strconv"
 )
 
 type TimelineService struct {
@@ -22,58 +23,41 @@ func NewTimelineService(repo *repositories.TimelineRepository, timelineStatusRep
 	}
 }
 
-func (s *TimelineService) GetAllTimelines(trackId int) (_ []*models.Timeline, err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, err
+func SingleTimelineConvert(model *models.Timeline) *timeline_api.TimelineResponse {
+	return &timeline_api.TimelineResponse{
+		Deadline:         model.Deadline,
+		Description:      model.Description,
+		IsBlocking:       model.IsBlocking,
+		Status:           model.Status,
+		Title:            model.Title,
+		TrackId:          model.TrackID,
+		TimelineStatusId: model.TimelineStatusID,
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-
-		err = tx.Commit()
-	}()
-
-	return s.repo.GetTimelinesByTrackID(tx, trackId)
 }
 
-func (s *TimelineService) GetAllTimelinesWithStatus(trackId int, Status string) (_ []*models.Timeline, err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, err
+func MultipleTimelineConvert(models []*models.Timeline) []*timeline_api.TimelineResponse {
+	responses := make([]*timeline_api.TimelineResponse, 0)
+
+	for _, model := range models {
+		responses = append(responses, SingleTimelineConvert(model))
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
 
-		err = tx.Commit()
-	}()
-
-	return s.repo.GetTimelinesByTrackIDWithStatus(tx, trackId, Status)
+	return responses
 }
 
-func (s *TimelineService) GetTimelineById(timelineId int) (_ *models.Timeline, err error) {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, err
+func MultipleTimelineStatusConvert(statusesModels []*models.TimelineStatus) []*timeline_api.TimelineStatusResponse {
+	responses := make([]*timeline_api.TimelineStatusResponse, 0)
+
+	for _, model := range statusesModels {
+		responses = append(responses, &timeline_api.TimelineStatusResponse{
+			CountNum: model.CountNum,
+		})
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
 
-		err = tx.Commit()
-	}()
-
-	return s.repo.GetTimelineByID(tx, timelineId)
+	return responses
 }
 
-func (s *TimelineService) CreateTimeline(timeline *schemas.Timeline) (_ *models.Timeline, err error) {
+func (s *TimelineService) GetAllTimelines(trackId int) (_ []*timeline_api.TimelineResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -87,7 +71,73 @@ func (s *TimelineService) CreateTimeline(timeline *schemas.Timeline) (_ *models.
 		err = tx.Commit()
 	}()
 
-	nextIndex, err := s.repo.GetMaxNumOfTimeline(tx, timeline.TrackID)
+	timelineModels, err := s.repo.GetTimelinesByTrackID(tx, trackId)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleTimelineConvert(timelineModels), nil
+}
+
+func (s *TimelineService) GetAllTimelinesWithStatus(trackId int, Status string) (_ []*timeline_api.TimelineResponse, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	timelineModels, err := s.repo.GetTimelinesByTrackIDWithStatus(tx, trackId, Status)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleTimelineConvert(timelineModels), err
+}
+
+func (s *TimelineService) GetTimelineById(timelineId int) (_ *timeline_api.TimelineResponse, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	timelineModel, err := s.repo.GetTimelineByID(tx, timelineId)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleTimelineConvert(timelineModel), nil
+}
+
+func (s *TimelineService) CreateTimeline(timeline *timeline_api.Timeline) (_ *timeline_api.TimelineResponse, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+
+		err = tx.Commit()
+	}()
+
+	nextIndex, err := s.repo.GetMaxNumOfTimeline(tx, timeline.TrackId)
 	nextIndex++
 
 	model := &models.Timeline{
@@ -96,14 +146,19 @@ func (s *TimelineService) CreateTimeline(timeline *schemas.Timeline) (_ *models.
 		Deadline:         timeline.Deadline,
 		IsBlocking:       timeline.IsBlocking,
 		Status:           timeline.Status,
-		TrackID:          timeline.TrackID,
+		TrackID:          timeline.TrackId,
 		TimelineStatusID: nextIndex,
 	}
 
-	return s.repo.Create(tx, model)
+	timelineModel, err := s.repo.Create(tx, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleTimelineConvert(timelineModel), nil
 }
 
-func (s *TimelineService) UpdateTimeline(timelineId int, newTimeline *schemas.TimelineUpdate) (_ *models.Timeline, err error) {
+func (s *TimelineService) UpdateTimeline(timelineId int, newTimeline *timeline_api.TimelineUpdate) (_ *timeline_api.TimelineResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -122,33 +177,53 @@ func (s *TimelineService) UpdateTimeline(timelineId int, newTimeline *schemas.Ti
 		return nil, err
 	}
 
-	if newTimeline.Title != "" {
-		timeline.Title = newTimeline.Title
+	if newTimeline.Title != nil {
+		timeline.Title = *newTimeline.Title
 	}
 
-	if newTimeline.Description != "" {
-		timeline.Description = newTimeline.Description
+	if newTimeline.Description != nil {
+		timeline.Description = *newTimeline.Description
 	}
 
 	if !newTimeline.Deadline.IsZero() {
-		timeline.Deadline = newTimeline.Deadline
+		timeline.Deadline = *newTimeline.Deadline
 	}
 
-	timeline.IsBlocking = newTimeline.IsBlocking
-
-	if newTimeline.TrackID != 0 {
-		timeline.TrackID = newTimeline.TrackID
+	converted, err := strconv.ParseBool(*newTimeline.IsBlocking)
+	if err != nil {
+		return nil, err
 	}
 
-	if newTimeline.TimelineStatusID != 0 {
-		timeline.TimelineStatusID = newTimeline.TimelineStatusID
+	timeline.IsBlocking = converted
+
+	if newTimeline.TrackId != nil {
+		timeline.TrackId = *newTimeline.TrackId
 	}
 
-	if newTimeline.Status != "" {
-		timeline.Status = newTimeline.Status
+	if newTimeline.TimelineStatusId != nil {
+		timeline.TimelineStatusId = *newTimeline.TimelineStatusId
 	}
 
-	return s.repo.UpdateTimeline(tx, timelineId, timeline)
+	if newTimeline.Status != nil {
+		timeline.Status = *newTimeline.Status
+	}
+
+	model := &models.Timeline{
+		Title:            timeline.Title,
+		Description:      timeline.Description,
+		Deadline:         timeline.Deadline,
+		IsBlocking:       timeline.IsBlocking,
+		Status:           timeline.Status,
+		TrackID:          timeline.TrackId,
+		TimelineStatusID: timeline.TimelineStatusId,
+	}
+
+	timelineModel, err := s.repo.UpdateTimeline(tx, timelineId, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return SingleTimelineConvert(timelineModel), nil
 }
 
 func (s *TimelineService) DeleteTimeline(timelineId int) (err error) {
@@ -168,7 +243,7 @@ func (s *TimelineService) DeleteTimeline(timelineId int) (err error) {
 	return s.repo.DeleteTimeline(tx, timelineId)
 }
 
-func (s *TimelineService) GetAllTimelineStatuses() (_ []*models.TimelineStatus, err error) {
+func (s *TimelineService) GetAllTimelineStatuses() (_ []*timeline_api.TimelineStatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -182,10 +257,15 @@ func (s *TimelineService) GetAllTimelineStatuses() (_ []*models.TimelineStatus, 
 		err = tx.Commit()
 	}()
 
-	return s.timelineStatusRepo.GetAllTimelineStatuses(tx)
+	timelineModels, err := s.timelineStatusRepo.GetAllTimelineStatuses(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return MultipleTimelineStatusConvert(timelineModels), nil
 }
 
-func (s *TimelineService) CreateTimelineStatus(timelineStatus *schemas.TimelineStatus) (_ *models.TimelineStatus, err error) {
+func (s *TimelineService) CreateTimelineStatus(timelineStatus *timeline_api.TimelineStatusResponse) (_ *timeline_api.TimelineStatusResponse, err error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
@@ -203,5 +283,10 @@ func (s *TimelineService) CreateTimelineStatus(timelineStatus *schemas.TimelineS
 		CountNum: timelineStatus.CountNum,
 	}
 
-	return s.timelineStatusRepo.Create(tx, &model)
+	timelineModel, err := s.timelineStatusRepo.Create(tx, &model)
+	if err != nil {
+		return nil, err
+	}
+
+	return &timeline_api.TimelineStatusResponse{CountNum: timelineModel.CountNum}, nil
 }

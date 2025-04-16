@@ -6,6 +6,7 @@ type Track struct {
 	IsScoreBased bool   `json:"is_score_based" validate:"omitempty" example:"false"`
 	EventID      int    `json:"event_id" validate:"required" example:"42"`
 	DateID       int    `json:"date_id" validate:"required" example:"42"`
+	Status       string `json:"status" validate:"required" example:"planned"`
 }
 
 type TrackUpdate struct {
@@ -14,4 +15,5 @@ type TrackUpdate struct {
 	IsScoreBased string `json:"is_score_based" example:"false"`
 	EventID      int    `json:"event_id" example:"42"`
 	DateID       int    `json:"date_id" example:"42"`
+	Status       string `json:"status" example:"planned"`
 }

@@ -17,6 +17,7 @@ var (
 		Name: "cron_task_failure_total",
 		Help: "Total number of failed cron tasks",
 	})
+
 	EventStartSuccess = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "event_start_success_total",
 		Help: "Total number of successful event starts",
@@ -33,14 +34,39 @@ var (
 		Name: "event_end_failure_total",
 		Help: "Total number of failed event ends",
 	})
+
+	TrackStartSuccess = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "track_start_success_total",
+		Help: "Total number of successful track starts",
+	})
+	TrackStartFailure = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "track_start_failure_total",
+		Help: "Total number of failed track starts",
+	})
+	TrackEndSuccess = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "track_end_success_total",
+		Help: "Total number of successful track ends",
+	})
+	TrackEndFailure = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "track_end_failure_total",
+		Help: "Total number of failed track ends",
+	})
 )
 
 type EventService interface {
 	GetAllEventsToStart() ([]*models.Event, error)
 	GetAllEventsToEnd() ([]*models.Event, error)
 
-	StartEvent(eventID int) (*models.Event, error)
-	EndEvent(eventID int) (*models.Event, error)
+	StartEvent(int) (*models.Event, error)
+	EndEvent(int) (*models.Event, error)
+}
+
+type TrackService interface {
+	GetAllTracksToStart() ([]*models.Track, error)
+	GetAllTracksToEnd() ([]*models.Track, error)
+
+	StartTrack(int) (*models.Track, error)
+	EndTrack(int) (*models.Track, error)
 }
 
 func ScheduleEvents(log *slog.Logger, service EventService) {
@@ -95,6 +121,66 @@ func ScheduleEvents(log *slog.Logger, service EventService) {
 
 	if err != nil {
 		log.Error("Error scheduling end events:", slog.String("error", err.Error()))
+		CronTaskFailure.Inc()
+	} else {
+		CronTaskSuccess.Inc()
+	}
+
+	c.Start()
+}
+
+func ScheduleTracks(log *slog.Logger, service TrackService) {
+	c := cron.New()
+
+	_, err := c.AddFunc("@every 1m", func() {
+		tracks, err := service.GetAllTracksToStart()
+		if err != nil {
+			log.Error("Failed to get tracks to start")
+			return
+		}
+
+		for _, track := range tracks {
+			_, err = service.StartTrack(track.ID)
+
+			if err != nil {
+				log.Error("Failed to start track", slog.String("id", strconv.Itoa(track.ID)))
+				TrackStartFailure.Inc()
+			} else {
+				log.Info("Successfully started track", slog.String("id", strconv.Itoa(track.ID)))
+				TrackStartSuccess.Inc()
+			}
+		}
+	})
+
+	if err != nil {
+		log.Error("Error scheduling start tracks", slog.String("error", err.Error()))
+		CronTaskFailure.Inc()
+	} else {
+		CronTaskSuccess.Inc()
+	}
+
+	_, err = c.AddFunc("@every 1m", func() {
+		tracks, err := service.GetAllTracksToEnd()
+		if err != nil {
+			log.Error("Failed to get tracks to end")
+			return
+		}
+
+		for _, track := range tracks {
+			_, err = service.EndTrack(track.ID)
+
+			if err != nil {
+				log.Error("Failed to env track", slog.String("id", strconv.Itoa(track.ID)))
+				TrackEndFailure.Inc()
+			} else {
+				log.Info("Successfully ended track", slog.String("id", strconv.Itoa(track.ID)))
+				TrackEndSuccess.Inc()
+			}
+		}
+	})
+
+	if err != nil {
+		log.Error("Error scheduling end tracks:", slog.String("error", err.Error()))
 		CronTaskFailure.Inc()
 	} else {
 		CronTaskSuccess.Inc()

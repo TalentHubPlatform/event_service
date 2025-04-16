@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"strconv"
 )
 
@@ -36,12 +37,12 @@ func NewDateHandler(log *slog.Logger, service DateService, validator *validator.
 }
 
 func decodeAndValidateEcho(ctx echo.Context, dst interface{}, validate *validator.Validate) error {
-	if err := ctx.Bind(dst); err != nil {
-		return fmt.Errorf("failed to bind request body: %w", err)
+	if reflect.TypeOf(dst).Kind() != reflect.Ptr {
+		return fmt.Errorf("destination must be a pointer to a struct")
 	}
 
-	if err := validate.Struct(dst); err != nil {
-		return fmt.Errorf("validation failed: %w", err)
+	if err := ctx.Bind(dst); err != nil {
+		return fmt.Errorf("failed to bind request body: %w", err)
 	}
 
 	return nil
@@ -52,7 +53,6 @@ func (h *DateHandler) GetDates(ctx echo.Context) error {
 
 	log := slog.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
 	)
 
 	dates, err := h.service.GetAllDates()
@@ -74,7 +74,6 @@ func (h *DateHandler) PostDates(ctx echo.Context) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
 	)
 
 	var date api.Date
@@ -101,8 +100,6 @@ func (h *DateHandler) PutDatesId(ctx echo.Context, id api.Id) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
-		slog.Int("date_id", int(id)),
 	)
 
 	var date api.DateUpdate
@@ -129,8 +126,6 @@ func (h *DateHandler) GetDatesId(ctx echo.Context, id api.Id) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
-		slog.Int("date_id", int(id)),
 	)
 
 	date, err := h.service.GetDateByID(int(id))
@@ -150,8 +145,6 @@ func (h *DateHandler) DeleteDatesId(ctx echo.Context, id api.Id) error {
 
 	log := h.log.With(
 		slog.String("op", op),
-		slog.String("request_id", ctx.Get("request_id").(string)), // Предполагается, что request_id установлен middleware
-		slog.Int("date_id", int(id)),
 	)
 
 	err := h.service.DeleteDate(id)
@@ -177,6 +170,13 @@ func (w *echoResponseWriter) Write(data []byte) (int, error) {
 func HandlerAdapter(echoHandler func(echo.Context) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		echoContext := echo.New().NewContext(r, &echoResponseWriter{w})
+
+		params := chi.RouteContext(r.Context()).URLParams
+		for idx, key := range params.Keys {
+			echoContext.SetParamNames(key)
+			echoContext.SetParamValues(params.Values[idx])
+		}
+
 		_ = echoHandler(echoContext)
 	}
 }
@@ -193,24 +193,26 @@ func NewDate(log *slog.Logger, service *service.DateService) *chi.Mux {
 
 	handler := NewDateHandler(log, service, &validate)
 
-	r.Get("/dates", HandlerAdapter(handler.GetDates))
-	r.Post("/dates", HandlerAdapter(handler.PostDates))
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", HandlerAdapter(handler.GetDates))
+		r.Post("/", HandlerAdapter(handler.PostDates))
 
-	r.Route("/dates/{id}", func(r chi.Router) {
-		r.Get("/", HandlerAdapter(func(ctx echo.Context) error {
-			id, _ := strconv.Atoi(ctx.Param("id"))
-			return handler.GetDatesId(ctx, api.Id(id))
-		}))
+		r.Route("/{Id}", func(r chi.Router) {
+			r.Get("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("Id"))
+				return handler.GetDatesId(ctx, api.Id(id))
+			}))
 
-		r.Put("/", HandlerAdapter(func(ctx echo.Context) error {
-			id, _ := strconv.Atoi(ctx.Param("id"))
-			return handler.PutDatesId(ctx, api.Id(id))
-		}))
+			r.Put("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("Id"))
+				return handler.PutDatesId(ctx, api.Id(id))
+			}))
 
-		r.Delete("/", HandlerAdapter(func(ctx echo.Context) error {
-			id, _ := strconv.Atoi(ctx.Param("id"))
-			return handler.DeleteDatesId(ctx, api.Id(id))
-		}))
+			r.Delete("/", HandlerAdapter(func(ctx echo.Context) error {
+				id, _ := strconv.Atoi(ctx.Param("Id"))
+				return handler.DeleteDatesId(ctx, api.Id(id))
+			}))
+		})
 	})
 
 	return r
